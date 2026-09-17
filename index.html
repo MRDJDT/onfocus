@@ -57,6 +57,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .mode-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:none;cursor:pointer;background:rgba(255,255,255,.96);box-shadow:0 8px 32px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;text-align:left;color:var(--text);}
 .mode-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(0,0,0,.14);}
 .m-icon{font-size:2.4rem;width:52px;text-align:center;flex-shrink:0;}
+.m-photo{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.22);border:3px solid rgba(255,255,255,.6);}
 .m-label{font-size:1.15rem;font-weight:900;color:#1E1B4B;}
 .m-sub{font-size:.88rem;font-weight:700;color:#6366F1;display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
 .m-arrow{margin-left:auto;color:#6366F1;font-size:1.1rem;}
@@ -109,6 +110,8 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px;}
 .task-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border-left:5px solid var(--cc,var(--blue));transition:transform .15s,box-shadow .15s;}
 .task-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.tc-img{height:88px;background-size:cover;background-position:center;position:relative;}
+.tc-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.3) 100%);}
 .tc-top{padding:14px 14px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
 .sub-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:999px;font-size:.82rem;font-weight:800;}
 .tc-actions{display:flex;gap:6px;}
@@ -169,9 +172,10 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .ps-back{padding:8px 16px;border-radius:12px;border:none;background:rgba(255,255,255,.22);color:#fff;font:700 .92rem/1 'Nunito',sans-serif;cursor:pointer;white-space:nowrap;}
 .ps-back:active{background:rgba(255,255,255,.32);}
 .ps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
-.ps-card{background:rgba(255,255,255,.95);border-radius:20px;padding:22px 16px;text-align:center;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s;box-shadow:0 6px 24px rgba(0,0,0,.14);display:flex;flex-direction:column;align-items:center;gap:9px;min-height:148px;}
+.ps-card{background:rgba(255,255,255,.95);border-radius:20px;padding:22px 16px;text-align:center;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s;box-shadow:0 6px 24px rgba(0,0,0,.14);display:flex;flex-direction:column;align-items:center;gap:9px;min-height:148px;overflow:hidden;position:relative;}
 .ps-card:active{transform:scale(.97);}
 .ps-ico{font-size:2.6rem;}
+.ps-card-img{width:72px;height:72px;border-radius:16px;background-size:cover;background-position:center;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.18);}
 .ps-subj{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#6366F1;}
 .ps-name{font-family:'Fredoka One',cursive;font-size:1rem;color:#1E1B4B;text-wrap:balance;line-height:1.25;}
 
@@ -263,7 +267,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .sdot.done{background:var(--green);}
 
 /* COMPLETION */
-.comp-screen{min-height:100vh;background:linear-gradient(150deg,#4F46E5 0%,#7C3AED 50%,#EC4899 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:22px;text-align:center;position:relative;overflow:hidden;}
+.comp-screen{min-height:100vh;background:linear-gradient(150deg,rgba(79,70,229,.9) 0%,rgba(124,58,237,.85) 50%,rgba(236,72,153,.9) 100%),url(https://images.unsplash.com/photo-1698285439446-2ad560e31a17?w=1080&auto=format&fit=crop&q=80) center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:22px;text-align:center;position:relative;overflow:hidden;}
 .comp-screen canvas{position:fixed;inset:0;pointer-events:none;z-index:10;}
 .comp-inner{position:relative;z-index:20;display:flex;flex-direction:column;align-items:center;gap:14px;}
 .comp-star{font-size:5.5rem;animation:spinStar .7s ease both;}
@@ -374,18 +378,19 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genClassCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 
 const SUBJECTS = [
-  { id:'english',   label:'English',   emoji:'📝', col:'#3B82F6', light:'#DBEAFE', dark:'#1D4ED8' },
-  { id:'maths',     label:'Maths',     emoji:'🔢', col:'#8B5CF6', light:'#EDE9FE', dark:'#6D28D9' },
-  { id:'science',   label:'Science',   emoji:'🔬', col:'#10B981', light:'#D1FAE5', dark:'#065F46' },
-  { id:'history',   label:'History',   emoji:'🏛️',  col:'#F59E0B', light:'#FEF3C7', dark:'#92400E' },
-  { id:'art',       label:'Art',       emoji:'🎨', col:'#EC4899', light:'#FCE7F3', dark:'#9D174D' },
-  { id:'pe',        label:'P.E.',      emoji:'⚽', col:'#EF4444', light:'#FEE2E2', dark:'#991B1B' },
+  { id:'english',   label:'English',   emoji:'📝', col:'#3B82F6', light:'#DBEAFE', dark:'#1D4ED8', img:'1554721299-e0b8aa7666ce' },
+  { id:'maths',     label:'Maths',     emoji:'🔢', col:'#8B5CF6', light:'#EDE9FE', dark:'#6D28D9', img:'1635372722656-389f87a941b7' },
+  { id:'science',   label:'Science',   emoji:'🔬', col:'#10B981', light:'#D1FAE5', dark:'#065F46', img:'1554475901-4538ddfbccc2' },
+  { id:'history',   label:'History',   emoji:'🏛️',  col:'#F59E0B', light:'#FEF3C7', dark:'#92400E', img:'1572905421176-6fa2f11a236e' },
+  { id:'art',       label:'Art',       emoji:'🎨', col:'#EC4899', light:'#FCE7F3', dark:'#9D174D', img:'1513542789411-b6a5d4f31634' },
+  { id:'pe',        label:'P.E.',      emoji:'⚽', col:'#EF4444', light:'#FEE2E2', dark:'#991B1B', img:'1622659097509-4d56de14539e' },
   { id:'geography', label:'Geography', emoji:'🌍', col:'#06B6D4', light:'#CFFAFE', dark:'#155E75' },
   { id:'dt',        label:'D.T.',      emoji:'🔧', col:'#D97706', light:'#FEF3C7', dark:'#92400E' },
   { id:'mfl',       label:'MFL',       emoji:'🗺️',  col:'#059669', light:'#D1FAE5', dark:'#065F46' },
   { id:'re',        label:'R.E.',      emoji:'🕊️',  col:'#7C3AED', light:'#EDE9FE', dark:'#4C1D95' },
   { id:'other',     label:'Other',     emoji:'📚', col:'#6B7280', light:'#F3F4F6', dark:'#374151' },
 ];
+const unsplashImg = id => `https://images.unsplash.com/photo-${id}?w=400&auto=format&fit=crop&q=80`;
 const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
 const STEP_TYPES = [
   { v:'copy_title', l:'📋 Copy Title & Date' },
@@ -1158,6 +1163,7 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
       html`<div class="task-grid">${tasks.map(task=>{
         const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
         return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
+          ${s.img?html`<div class="tc-img" style=${{backgroundImage:`url(${unsplashImg(s.img)})`}}></div>`:null}
           <div class="tc-top">
             <span class="sub-badge" style=${{background:s.light,color:s.dark}}>${s.emoji} ${s.label}</span>
             <div class="tc-actions">
@@ -1221,7 +1227,7 @@ function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
     html`<div class="ps-grid">${tasks.map(t=>{
       const s=SUBJECTS.find(x=>x.id===t.subject)||SUBJECTS[7];
       return html`<button key=${t.id} class="ps-card" onClick=${()=>onSelect(t)}>
-        <div class="ps-ico">${s.emoji}</div>
+        ${s.img?html`<div class="ps-card-img" style=${{backgroundImage:`url(${unsplashImg(s.img)})`}}></div>`:html`<div class="ps-ico">${s.emoji}</div>`}
         <div class="ps-subj">${s.label}</div>
         <div class="ps-name">${t.title}</div>
         ${t.timerMins>0?html`<div style=${{fontSize:'.72rem',color:'#6366F1',fontWeight:800}}>⏱ ${t.timerMins} min</div>`:null}
@@ -1290,12 +1296,12 @@ function Landing({ onTeacher, onPupil, onStickers }) {
     </div>
     <div class="mode-btns">
       <button class="mode-btn" onClick=${()=>setShowPin(true)}>
-        <span class="m-icon">👩‍🏫</span>
+        <img class="m-photo" src="https://images.unsplash.com/photo-1758685847747-597ce085906e?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Teacher"/>
         <span class="m-text"><span class="m-label">I'm a Teacher</span><span class="m-sub">Create &amp; manage tasks</span></span>
         <span class="m-arrow">›</span>
       </button>
       <button class="mode-btn" onClick=${onPupil}>
-        <span class="m-icon">🧑‍🎓</span>
+        <img class="m-photo" src="https://images.unsplash.com/photo-1695131497815-931e70a5d8bc?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Pupil"/>
         <span class="m-text"><span class="m-label">I'm a Pupil</span>
           <span class="m-sub">Start your task${stickers.length>0?html` <span class="stick-badge">⭐ ${stickers.length}</span>`:''}</span>
         </span>
