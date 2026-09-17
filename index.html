@@ -48,6 +48,9 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 
 /* LANDING */
 .landing{min-height:100vh;background:linear-gradient(150deg,#3B82F6 0%,#6366F1 45%,#8B5CF6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;gap:24px;position:relative;overflow:hidden;}
+.landing-date{position:absolute;top:18px;right:20px;text-align:right;color:rgba(255,255,255,.92);pointer-events:none;}
+.landing-date-day{font-family:'Fredoka One',cursive;font-size:1.05rem;letter-spacing:.04em;}
+.landing-date-full{font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);margin-top:1px;}
 .landing::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 15%,rgba(255,255,255,.13) 0%,transparent 60%);pointer-events:none;}
 .landing-hero{text-align:center;animation:bounceIn .7s ease both;}
 .mascot{width:150px;height:150px;margin:0 auto 14px;animation:floaty 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.22));}
@@ -1272,8 +1275,12 @@ function Landing({ onTeacher, onPupil, onStickers }) {
   const [showPin,setShowPin] = useState(false);
   const settings = loadSettings();
   const stickers = loadStickers();
+  const now = new Date();
+  const dayName = now.toLocaleDateString('en-GB',{weekday:'long'});
+  const fullDate = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   return html`<div class="landing">
     ${showPin?html`<${PinModal} pin=${settings.pin} onOk=${()=>{setShowPin(false);onTeacher();}} onCancel=${()=>setShowPin(false)}/>`:null}
+    <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
     <div class="landing-hero">
       <div class="mascot">
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
