@@ -1,0 +1,1337 @@
+<title>Focus Time</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --blue:#3B82F6; --blue-d:#1D4ED8; --blue-l:#DBEAFE;
+  --violet:#6366F1; --violet-l:#E0E7FF;
+  --coral:#F97316; --coral-l:#FFEDD5;
+  --green:#22C55E; --green-l:#DCFCE7;
+  --gold:#EAB308; --red:#EF4444; --amber:#F59E0B;
+  --bg:#EEF2FF; --surface:#FFFFFF;
+  --text:#1E1B4B; --muted:#6366F1; --faint:#9CA3AF;
+  --border:rgba(99,102,241,0.18);
+  --sh:0 4px 20px rgba(30,27,75,0.09); --sh-lg:0 8px 40px rgba(30,27,75,0.14);
+  --r:16px; --r-sm:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F0E2A; --surface:#1A1840; --text:#EEF2FF; --muted:#A5B4FC; --faint:#6366F1;
+  --border:rgba(165,180,252,0.13); --sh:0 4px 20px rgba(0,0,0,.3); --sh-lg:0 8px 40px rgba(0,0,0,.4);
+  --blue-l:#1E3A8A; --violet-l:#2E1065; --coral-l:#431407; --green-l:#14532D;
+}}
+[data-theme="dark"]{
+  --bg:#0F0E2A; --surface:#1A1840; --text:#EEF2FF; --muted:#A5B4FC; --faint:#6366F1;
+  --border:rgba(165,180,252,0.13); --sh:0 4px 20px rgba(0,0,0,.3); --sh-lg:0 8px 40px rgba(0,0,0,.4);
+  --blue-l:#1E3A8A; --violet-l:#2E1065; --coral-l:#431407; --green-l:#14532D;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body,#root{height:100%;}
+body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes bounceIn{0%{transform:scale(.82) translateY(14px);opacity:0}65%{transform:scale(1.04) translateY(-3px);opacity:1}100%{transform:scale(1) translateY(0);opacity:1}}
+@keyframes slideUp{from{transform:translateY(22px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes slideRight{from{transform:translateX(30px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes writeIn{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0% 0 0)}}
+@keyframes pencilBob{0%,100%{transform:rotate(-15deg) translateY(0)}50%{transform:rotate(-15deg) translateY(-5px)}}
+@keyframes spinStar{from{transform:rotate(-30deg) scale(0);opacity:0}60%{transform:rotate(20deg) scale(1.2);opacity:1}to{transform:rotate(0deg) scale(1);opacity:1}}
+@keyframes pulseRed{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}50%{box-shadow:0 0 0 6px rgba(239,68,68,0)}}
+@keyframes wiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}80%{transform:rotate(-4deg)}}
+@keyframes dotPop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes timerPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes ringPulse{0%,100%{opacity:1}50%{opacity:.5}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
+
+/* LANDING */
+.landing{min-height:100vh;background:linear-gradient(150deg,#3B82F6 0%,#6366F1 45%,#8B5CF6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;gap:24px;position:relative;overflow:hidden;}
+.landing::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 15%,rgba(255,255,255,.13) 0%,transparent 60%);pointer-events:none;}
+.landing-hero{text-align:center;animation:bounceIn .7s ease both;}
+.mascot{width:150px;height:150px;margin:0 auto 14px;animation:floaty 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.22));}
+.landing-title{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,8vw,3.8rem);color:#fff;letter-spacing:.02em;text-shadow:0 3px 12px rgba(0,0,0,.2);}
+.landing-sub{font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.85);margin-top:4px;}
+.mode-btns{display:flex;flex-direction:column;gap:14px;width:100%;max-width:440px;animation:slideUp .6s .25s ease both;}
+.mode-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:none;cursor:pointer;background:rgba(255,255,255,.96);box-shadow:0 8px 32px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;text-align:left;color:var(--text);}
+.mode-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(0,0,0,.14);}
+.m-icon{font-size:2.4rem;width:52px;text-align:center;flex-shrink:0;}
+.m-label{font-size:1.15rem;font-weight:900;color:#1E1B4B;}
+.m-sub{font-size:.88rem;font-weight:700;color:#6366F1;display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
+.m-arrow{margin-left:auto;color:#6366F1;font-size:1.1rem;}
+.stick-badge{background:var(--gold);color:#7c5700;border-radius:999px;padding:2px 8px;font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
+.landing-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:slideUp .5s .4s ease both;opacity:0;animation-fill-mode:both;}
+.landing-link{padding:8px 18px;border-radius:12px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.landing-link:active{background:rgba(255,255,255,.22);}
+
+/* PIN MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;animation:bounceIn .2s ease both;}
+.pin-box{background:var(--surface);border-radius:24px;padding:30px 26px;width:100%;max-width:340px;box-shadow:var(--sh-lg);display:flex;flex-direction:column;align-items:center;gap:18px;}
+.pin-title{font-family:'Fredoka One',cursive;font-size:1.7rem;color:var(--text);}
+.pin-hint{font-size:.9rem;font-weight:700;color:var(--faint);margin-top:-10px;}
+.pin-dots{display:flex;gap:14px;}
+.pin-dot{width:18px;height:18px;border-radius:50%;border:3px solid var(--blue);transition:background .13s;}
+.pin-dot.on{background:var(--blue);}
+.pin-dots.err .pin-dot{border-color:var(--red);animation:wiggle .4s;}
+.pin-err{color:var(--red);font-size:.88rem;font-weight:800;margin-top:-10px;}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;}
+.pin-key{height:62px;border-radius:14px;border:2px solid var(--border);background:var(--bg);color:var(--text);font-family:'Fredoka One',cursive;font-size:1.55rem;cursor:pointer;transition:transform .1s,background .1s;}
+.pin-key:active{transform:scale(.92);background:var(--blue-l);}
+.pin-key.ghost{visibility:hidden;}
+
+/* SHARED */
+.btn{padding:13px 22px;border-radius:14px;border:none;font-family:'Nunito',sans-serif;font-size:1rem;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:8px;transition:transform .12s,box-shadow .12s;min-height:48px;}
+.btn:active{transform:scale(.96);}
+.btn:disabled{opacity:.42;cursor:not-allowed;}
+.btn-primary{background:var(--blue);color:#fff;box-shadow:0 4px 16px rgba(59,130,246,.35);}
+.btn-primary:not(:disabled):active{background:var(--blue-d);}
+.btn-secondary{background:var(--bg);color:var(--text);border:2px solid var(--border);}
+.btn-orange{background:var(--coral);color:#fff;box-shadow:0 4px 16px rgba(249,115,22,.35);}
+.btn-ghost{background:transparent;color:var(--muted);border:2px solid var(--border);}
+.btn-full{width:100%;justify-content:center;}
+.icon-btn{width:40px;height:40px;border-radius:10px;border:none;background:var(--bg);color:var(--muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .12s;flex-shrink:0;position:relative;}
+.icon-btn:active{transform:scale(.9);}
+.icon-btn.danger{color:var(--red);}
+.icon-btn:disabled{opacity:.3;cursor:not-allowed;}
+
+/* PANEL HEADER */
+.ph{display:flex;align-items:center;gap:10px;padding:16px 18px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;}
+.ph h1{font-family:'Fredoka One',cursive;font-size:1.55rem;flex:1;color:var(--text);}
+.back{display:flex;align-items:center;gap:5px;padding:8px 14px;border-radius:10px;border:none;background:var(--bg);color:var(--muted);font:700 .92rem/1 'Nunito',sans-serif;cursor:pointer;transition:background .12s;white-space:nowrap;}
+.back:active{transform:scale(.97);}
+
+/* TEACHER */
+.t-screen{background:var(--bg);min-height:100vh;}
+.t-body{padding:18px 18px 90px;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
+.tasks-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.tasks-hdr h2{font-family:'Fredoka One',cursive;font-size:1.35rem;color:var(--text);}
+.task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px;}
+.task-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border-left:5px solid var(--cc,var(--blue));transition:transform .15s,box-shadow .15s;}
+.task-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
+.tc-top{padding:14px 14px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
+.sub-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:999px;font-size:.82rem;font-weight:800;}
+.tc-actions{display:flex;gap:6px;}
+.tc-body{padding:10px 14px 14px;}
+.tc-title{font-family:'Fredoka One',cursive;font-size:1.25rem;color:var(--text);margin-bottom:4px;text-wrap:balance;}
+.tc-meta{font-size:.82rem;font-weight:700;color:var(--faint);display:flex;gap:10px;flex-wrap:wrap;}
+.tc-foot{padding:12px 14px;border-top:1px solid var(--border);}
+.empty{text-align:center;padding:60px 20px;display:flex;flex-direction:column;align-items:center;gap:12px;}
+.empty-ico{font-size:3.5rem;animation:floaty 3s ease-in-out infinite;}
+.empty-txt{color:var(--faint);font-weight:700;font-size:1.05rem;}
+.settings-panel{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:14px;animation:slideUp .3s ease both;}
+.settings-panel h3{font-family:'Fredoka One',cursive;font-size:1.25rem;color:var(--text);}
+.srow{display:flex;flex-direction:column;gap:6px;}
+.srow label{font-size:.88rem;font-weight:800;color:var(--muted);}
+.srow input[type=range]{-webkit-appearance:none;height:6px;border-radius:3px;background:var(--blue-l);outline:none;}
+.srow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--blue);cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,.4);}
+.srow input[type=text],.srow input[type=number]{padding:10px 14px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 1rem 'Nunito',sans-serif;width:120px;}
+.cs-divider{border:none;border-top:2px solid var(--border);margin:4px 0;}
+.cs-code-box{display:flex;align-items:center;gap:10px;background:var(--bg);border-radius:12px;padding:12px 16px;border:2px solid var(--border);}
+.cs-code{font-family:'Fredoka One',cursive;font-size:1.9rem;letter-spacing:.15em;color:var(--blue);flex:1;}
+.cs-ok{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--green-l);color:#15803D;border-radius:10px;font:800 .9rem/1 'Nunito',sans-serif;animation:bounceIn .3s ease both;}
+.cs-err{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#FEE2E2;color:#B91C1C;border-radius:10px;font:800 .9rem/1 'Nunito',sans-serif;}
+
+/* LIVE CLASS */
+.live-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font:700 .95rem/1.4 'Nunito',sans-serif;color:var(--text);}
+.ci-tally{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
+.ci-tally>span{font-size:1.05rem;font-weight:800;}
+.help-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border-radius:50%;min-width:18px;height:18px;padding:0 3px;font:900 .68rem/18px 'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;}
+
+/* EDITOR */
+.ed-screen{background:var(--bg);min-height:100vh;}
+.ed-body{padding:18px 18px 100px;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+.fcard{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--sh);}
+.flabel{font-size:.8rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:9px;display:block;}
+.finput{width:100%;padding:11px 15px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 1rem/1.4 'Nunito',sans-serif;outline:none;transition:border-color .15s;-webkit-appearance:none;}
+.finput:focus{border-color:var(--blue);}
+.chips{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:999px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .13s;}
+.chip.sel{background:var(--cc,var(--blue));color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(0,0,0,.14);}
+.steps-list{display:flex;flex-direction:column;gap:10px;}
+.step-item{background:var(--surface);border-radius:var(--r-sm);border:2px solid var(--border);overflow:hidden;}
+.step-item:focus-within{border-color:var(--blue);}
+.si-head{display:flex;align-items:center;gap:8px;padding:9px 11px;background:var(--bg);}
+.si-num{width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-family:'Fredoka One',cursive;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.si-type{flex:1;padding:6px 10px;border-radius:8px;border:2px solid var(--border);background:var(--surface);color:var(--text);font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;-webkit-appearance:none;}
+.si-acts{display:flex;gap:5px;}
+.si-body{padding:11px;display:flex;flex-direction:column;gap:8px;}
+.icon-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.ic-opt{width:38px;height:38px;border-radius:8px;border:2px solid transparent;background:var(--bg);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s;}
+.ic-opt.sel{border-color:var(--blue);background:var(--blue-l);}
+.ed-footer{position:fixed;bottom:0;left:0;right:0;display:flex;gap:10px;padding:14px 18px;background:var(--surface);border-top:1px solid var(--border);box-shadow:0 -4px 20px rgba(0,0,0,.06);z-index:20;max-width:720px;margin:0 auto;}
+.ed-footer .btn{flex:1;justify-content:center;}
+
+/* PUPIL SELECT */
+.ps-screen{min-height:100vh;background:linear-gradient(150deg,#4F46E5 0%,#7C3AED 100%);padding:20px;display:flex;flex-direction:column;gap:22px;}
+.ps-hdr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.ps-hdr h1{font-family:'Fredoka One',cursive;font-size:1.7rem;color:#fff;flex:1;}
+.ps-back{padding:8px 16px;border-radius:12px;border:none;background:rgba(255,255,255,.22);color:#fff;font:700 .92rem/1 'Nunito',sans-serif;cursor:pointer;white-space:nowrap;}
+.ps-back:active{background:rgba(255,255,255,.32);}
+.ps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
+.ps-card{background:rgba(255,255,255,.95);border-radius:20px;padding:22px 16px;text-align:center;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s;box-shadow:0 6px 24px rgba(0,0,0,.14);display:flex;flex-direction:column;align-items:center;gap:9px;min-height:148px;}
+.ps-card:active{transform:scale(.97);}
+.ps-ico{font-size:2.6rem;}
+.ps-subj{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#6366F1;}
+.ps-name{font-family:'Fredoka One',cursive;font-size:1rem;color:#1E1B4B;text-wrap:balance;line-height:1.25;}
+
+/* CLASS JOIN */
+.cj-box{background:rgba(255,255,255,.15);border-radius:16px;padding:20px;color:#fff;display:flex;flex-direction:column;gap:12px;max-width:420px;margin:0 auto;}
+.cj-code-input{width:100%;padding:13px 15px;border-radius:12px;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.9);color:#1E1B4B;font:900 1.6rem/1 'Fredoka One',cursive;text-align:center;letter-spacing:.25em;text-transform:uppercase;outline:none;-webkit-appearance:none;}
+.cj-code-input:focus{border-color:#fff;}
+.cj-hint{color:rgba(255,255,255,.7);font-size:.88rem;font-weight:700;text-align:center;}
+.cj-err{color:#FCA5A5;font-size:.9rem;font-weight:800;}
+
+/* PUPIL ACTIVE */
+.pu-screen{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
+.pu-top{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 15px;display:flex;flex-direction:column;gap:10px;box-shadow:var(--sh);}
+.pu-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.pu-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 13px;border-radius:999px;font-size:.82rem;font-weight:900;}
+.pu-title{font-family:'Fredoka One',cursive;font-size:1.2rem;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.help-btn{padding:6px 12px;border-radius:10px;border:2px solid var(--amber);background:rgba(245,158,11,.12);color:#92400E;font:800 .8rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;min-height:34px;white-space:nowrap;}
+.help-btn.sent{background:var(--green-l);color:#15803D;border-color:var(--green);}
+.help-btn:active{transform:scale(.95);}
+.words-btn{padding:6px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--muted);font:800 .8rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;min-height:34px;}
+.words-btn:active{transform:scale(.95);background:var(--blue-l);}
+
+/* NOISE METER */
+.noise{display:flex;align-items:center;gap:9px;padding:7px 12px;border-radius:12px;background:var(--bg);border:2px solid var(--border);transition:border-color .3s,background .3s;}
+.noise.warn{border-color:var(--amber);}
+.noise.loud{border-color:var(--red);background:#FEF2F2;animation:pulseRed 1s infinite;}
+.n-emoji{font-size:1.35rem;width:26px;text-align:center;flex-shrink:0;}
+.n-track{flex:1;height:9px;border-radius:5px;background:var(--border);overflow:hidden;}
+.n-fill{height:100%;border-radius:5px;transition:width .1s ease,background .3s;}
+.n-label{font-size:.82rem;font-weight:800;min-width:96px;text-align:right;}
+.n-btn{display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:12px;border:2px dashed var(--border);background:transparent;color:var(--muted);font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.n-btn:active{transform:scale(.97);}
+
+/* TIMER STRIP */
+.timer-strip{display:flex;align-items:center;gap:10px;padding:9px 15px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.timer-quick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex:1;}
+.timer-label{font-size:.82rem;font-weight:800;color:var(--muted);white-space:nowrap;}
+.timer-chip{padding:6px 14px;border-radius:999px;border:2px solid var(--blue);background:var(--blue-l);color:var(--blue-d);font:800 .85rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .13s;min-height:34px;}
+.timer-chip:active{transform:scale(.93);}
+.timer-ring-wrap{display:flex;align-items:center;gap:10px;flex:1;flex-wrap:wrap;}
+.timer-btns{display:flex;gap:7px;}
+.timer-done-pill{padding:5px 14px;border-radius:999px;background:var(--coral-l);color:var(--coral);font:800 .85rem/1 'Nunito',sans-serif;animation:bounceIn .4s ease both;}
+
+/* PROGRESS */
+.prog-bar{padding:7px 15px;display:flex;flex-direction:column;gap:5px;}
+.prog-track{height:7px;border-radius:4px;background:var(--border);overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;background:var(--blue);transition:width .4s ease;}
+.prog-lbl{font-size:.82rem;font-weight:700;color:var(--faint);text-align:right;}
+
+/* STEP AREA */
+.step-area{flex:1;display:flex;flex-direction:column;padding:18px;animation:slideRight .32s ease both;overflow:hidden;}
+
+/* COPY TITLE */
+.copy-step{flex:1;display:flex;flex-direction:column;gap:16px;max-width:660px;margin:0 auto;width:100%;}
+.copy-hdr{display:flex;align-items:center;gap:12px;background:var(--blue);color:#fff;border-radius:var(--r);padding:14px 18px;}
+.copy-pencil{font-size:1.9rem;animation:pencilBob 1.2s ease-in-out infinite;display:inline-block;}
+.copy-hdr-text{font-family:'Fredoka One',cursive;font-size:1.45rem;line-height:1.2;}
+.lined-paper{flex:1;background:#fff;border-radius:var(--r);box-shadow:var(--sh);padding:20px 22px 20px 72px;display:flex;flex-direction:column;justify-content:center;gap:20px;position:relative;overflow:hidden;border:2px solid #BFDBFE;min-height:160px;}
+.lined-paper.four-lines{gap:16px;min-height:220px;}
+.lined-paper::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(transparent,transparent 33px,#BFDBFE 33px,#BFDBFE 34px);pointer-events:none;z-index:0;}
+.lined-paper::after{content:'';position:absolute;left:56px;top:0;bottom:0;width:2px;background:#FCA5A5;pointer-events:none;z-index:0;}
+.copy-line{position:relative;z-index:1;}
+.clt{font-family:'Fredoka One',cursive;font-size:clamp(1.3rem,4vw,1.9rem);color:#1E1B4B;display:inline-block;clip-path:inset(0 100% 0 0);}
+.clt.show{animation:writeIn .75s ease both;clip-path:inset(0 0% 0 0);}
+.cl-ul{display:block;height:3px;background:#1E1B4B;border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .6s ease;margin-top:4px;}
+.cl-ul.show{transform:scaleX(1);}
+.copy-done{display:flex;align-items:center;gap:10px;background:var(--green-l);color:#15803D;border-radius:var(--r-sm);padding:13px 18px;font-weight:800;font-size:1rem;animation:bounceIn .4s ease both;}
+
+/* INSTRUCTION STEP */
+.inst-step{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:18px;max-width:620px;margin:0 auto;width:100%;padding:12px 0;}
+.step-big-icon{font-size:clamp(4.5rem,14vw,6.5rem);animation:floaty 3s ease-in-out infinite;filter:drop-shadow(0 6px 16px rgba(0,0,0,.1));}
+.step-type-lbl{padding:5px 14px;border-radius:999px;font-size:.78rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;}
+.step-main{font-family:'Fredoka One',cursive;font-size:clamp(1.55rem,5vw,2.3rem);color:var(--text);text-wrap:balance;line-height:1.3;}
+.step-detail{font-size:1.05rem;font-weight:700;color:var(--muted);max-width:460px;text-wrap:balance;line-height:1.55;}
+
+/* HEADING STEP */
+.heading-step{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;max-width:620px;margin:0 auto;width:100%;padding:12px 0;}
+.heading-banner{display:inline-flex;align-items:center;gap:10px;padding:18px 32px;border-radius:20px;background:linear-gradient(135deg,var(--blue),var(--violet));box-shadow:0 8px 32px rgba(99,102,241,.35);}
+.heading-text{font-family:'Fredoka One',cursive;font-size:clamp(1.7rem,5vw,2.6rem);color:#fff;text-wrap:balance;line-height:1.25;text-align:center;}
+.heading-divider{display:flex;align-items:center;gap:10px;width:100%;max-width:320px;}
+.heading-divider::before,.heading-divider::after{content:'';flex:1;height:3px;border-radius:2px;background:var(--border);}
+.heading-divider-dot{font-size:1.2rem;}
+
+/* NAV */
+.pu-nav{padding:14px 18px;display:flex;align-items:center;gap:12px;background:var(--surface);border-top:1px solid var(--border);}
+.step-dots{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;}
+.sdot{width:9px;height:9px;border-radius:50%;background:var(--border);transition:all .3s;}
+.sdot.cur{background:var(--blue);width:22px;border-radius:4.5px;}
+.sdot.done{background:var(--green);}
+
+/* COMPLETION */
+.comp-screen{min-height:100vh;background:linear-gradient(150deg,#4F46E5 0%,#7C3AED 50%,#EC4899 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:22px;text-align:center;position:relative;overflow:hidden;}
+.comp-screen canvas{position:fixed;inset:0;pointer-events:none;z-index:10;}
+.comp-inner{position:relative;z-index:20;display:flex;flex-direction:column;align-items:center;gap:14px;}
+.comp-star{font-size:5.5rem;animation:spinStar .7s ease both;}
+.comp-title{font-family:'Fredoka One',cursive;font-size:clamp(2.4rem,8vw,3.8rem);color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.2);text-wrap:balance;}
+.comp-sub{font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.87);text-wrap:balance;}
+.comp-sticker{display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.18);border-radius:20px;padding:16px 24px;animation:bounceIn .6s .5s ease both;opacity:0;animation-fill-mode:both;}
+.comp-sticker-emo{font-size:3.2rem;animation:timerPulse 1.5s 1s ease-in-out infinite;}
+.comp-sticker-lbl{font-size:.88rem;font-weight:800;color:rgba(255,255,255,.9);}
+.comp-sticker-name{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;}
+.star-row{font-size:2.4rem;letter-spacing:4px;animation:bounceIn .6s .4s ease both;opacity:0;animation-fill-mode:both;}
+
+/* STICKER BOOK */
+.sb-screen{background:var(--bg);min-height:100vh;}
+.sb-body{padding:18px;max-width:720px;margin:0 auto;}
+.sticker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;}
+.sticker-cell{background:var(--surface);border-radius:14px;padding:14px 8px;text-align:center;box-shadow:var(--sh);animation:dotPop .35s ease both;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.sticker-emoji{font-size:2.4rem;}
+.sticker-name{font-size:.75rem;font-weight:800;color:var(--text);}
+.sticker-num{font-size:.7rem;color:var(--faint);font-weight:700;}
+
+/* WORD BANK */
+.wb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;animation:fadeIn .18s ease both;}
+.wb-panel{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-height:65vh;overflow-y:auto;padding:20px 20px 32px;box-shadow:var(--sh-lg);animation:slideUp .25s ease both;}
+.wb-head{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.wb-head h3{font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--text);flex:1;}
+.wb-list{display:flex;flex-direction:column;gap:10px;}
+.wb-item{background:var(--bg);border-radius:12px;padding:12px 16px;border-left:4px solid var(--blue);}
+.wb-word{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--blue-d);display:block;margin-bottom:3px;}
+.wb-def{font-size:.9rem;font-weight:700;color:var(--text);}
+
+/* CHECK-IN */
+.ci-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .18s ease both;}
+.ci-card{background:var(--surface);border-radius:24px;padding:28px 24px;max-width:360px;width:100%;box-shadow:var(--sh-lg);text-align:center;display:flex;flex-direction:column;gap:16px;animation:bounceIn .3s ease both;}
+.ci-q{font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--text);}
+.ci-btns{display:flex;gap:10px;justify-content:center;}
+.ci-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;border:2px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;min-height:82px;}
+.ci-btn:active{transform:scale(.95);border-color:var(--blue);background:var(--blue-l);}
+.ci-emo{font-size:2.4rem;}
+.ci-lbl{font-size:.78rem;font-weight:800;color:var(--muted);}
+.ci-auto{font-size:.78rem;font-weight:700;color:var(--faint);}
+
+/* NAME ENTRY */
+.ne-overlay{position:fixed;inset:0;background:linear-gradient(150deg,#4F46E5 0%,#7C3AED 100%);z-index:500;display:flex;align-items:center;justify-content:center;padding:24px;animation:fadeIn .2s ease both;}
+.ne-card{background:#fff;border-radius:28px;padding:32px 28px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:18px;align-items:center;text-align:center;animation:bounceIn .35s ease both;}
+.ne-pencil{font-size:3.5rem;animation:pencilBob 1.4s ease-in-out infinite;}
+.ne-title{font-family:'Fredoka One',cursive;font-size:1.9rem;color:#1E1B4B;}
+.ne-sub{font-size:.95rem;font-weight:700;color:#6366F1;margin-top:-10px;}
+.ne-input{width:100%;padding:14px 18px;border-radius:14px;border:3px solid #BFDBFE;background:#F0F7FF;color:#1E1B4B;font:800 1.4rem/1 'Nunito',sans-serif;text-align:center;outline:none;transition:border-color .15s;-webkit-appearance:none;}
+.ne-input:focus{border-color:#6366F1;}
+.ne-name-chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;border-radius:999px;background:rgba(99,102,241,0.12);color:var(--muted);font:800 .8rem/1 'Nunito',sans-serif;cursor:pointer;border:none;max-width:120px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex-shrink:0;}
+.ne-name-chip:active{background:rgba(99,102,241,0.22);}
+
+/* BOARD TIMER */
+.bt-screen{min-height:100vh;background:#080719;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 20px;gap:30px;position:relative;}
+.bt-exit{position:absolute;top:18px;left:18px;padding:8px 16px;border-radius:12px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);font:700 .9rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.bt-exit:active{background:rgba(255,255,255,.18);}
+.bt-ring-outer{position:relative;display:flex;align-items:center;justify-content:center;}
+.bt-presets{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+.bt-preset{padding:14px 22px;border-radius:16px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);font:800 1.05rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;min-height:52px;}
+.bt-preset:active{background:rgba(255,255,255,.18);}
+.bt-preset.active-p{background:var(--blue);border-color:var(--blue);box-shadow:0 4px 20px rgba(59,130,246,.4);}
+.bt-custom{display:flex;align-items:center;gap:10px;}
+.bt-input{width:68px;padding:10px;border-radius:10px;border:2px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font:800 1.1rem/1 'Nunito',sans-serif;text-align:center;-webkit-appearance:none;outline:none;}
+.bt-input:focus{border-color:var(--blue);}
+.bt-ctrls{display:flex;gap:12px;align-items:center;}
+.bt-start{padding:16px 40px;border-radius:18px;border:none;background:var(--blue);color:#fff;font:900 1.35rem/1 'Fredoka One',cursive;cursor:pointer;box-shadow:0 6px 28px rgba(59,130,246,.45);transition:all .15s;min-height:58px;}
+.bt-start:active{transform:scale(.97);}
+.bt-start:disabled{opacity:.4;cursor:not-allowed;}
+.bt-pause{padding:14px 22px;border-radius:14px;border:2px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.8);font:800 1rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.bt-pause:active{background:rgba(255,255,255,.12);}
+.bt-reset{padding:14px 22px;border-radius:14px;border:2px solid rgba(255,255,255,.15);background:transparent;color:rgba(255,255,255,.5);font:800 .95rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.bt-reset:active{background:rgba(255,255,255,.08);}
+.bt-done{font-family:'Fredoka One',cursive;font-size:clamp(2.2rem,7vw,3.5rem);color:#EF4444;animation:bounceIn .4s ease both;}
+
+.ai-def-btn{padding:8px 12px;border-radius:10px;border:2px solid var(--violet);background:var(--violet-l);color:var(--violet);font:800 .82rem/1 'Nunito',sans-serif;cursor:pointer;white-space:nowrap;min-height:42px;transition:all .13s;flex-shrink:0;}
+.ai-def-btn:active{transform:scale(.95);}
+.ai-def-btn:disabled{opacity:.38;cursor:not-allowed;}
+
+@media (min-width:580px){
+  .mode-btns{flex-direction:row;}
+  .mode-btn{flex:1;flex-direction:column;text-align:center;padding:22px 18px;gap:10px;}
+  .mode-btn .m-sub{justify-content:center;}
+  .m-arrow{display:none;}
+}
+@media (max-width:420px){
+  .n-label{display:none;}
+  .pu-title{font-size:1rem;}
+  .timer-label{display:none;}
+}
+</style>
+
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<script>
+const { useState, useEffect, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
+
+// ── utils ──────────────────────────────────────────────────────
+const genId = () => Math.random().toString(36).slice(2, 11);
+const todayISO = () => new Date().toISOString().split('T')[0];
+const fmtDate = iso => {
+  if (!iso) return '';
+  return new Date(iso + 'T12:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+};
+const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const genClassCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+
+const SUBJECTS = [
+  { id:'english',   label:'English',   emoji:'📝', col:'#3B82F6', light:'#DBEAFE', dark:'#1D4ED8' },
+  { id:'maths',     label:'Maths',     emoji:'🔢', col:'#8B5CF6', light:'#EDE9FE', dark:'#6D28D9' },
+  { id:'science',   label:'Science',   emoji:'🔬', col:'#10B981', light:'#D1FAE5', dark:'#065F46' },
+  { id:'history',   label:'History',   emoji:'🏛️',  col:'#F59E0B', light:'#FEF3C7', dark:'#92400E' },
+  { id:'art',       label:'Art',       emoji:'🎨', col:'#EC4899', light:'#FCE7F3', dark:'#9D174D' },
+  { id:'pe',        label:'P.E.',      emoji:'⚽', col:'#EF4444', light:'#FEE2E2', dark:'#991B1B' },
+  { id:'geography', label:'Geography', emoji:'🌍', col:'#06B6D4', light:'#CFFAFE', dark:'#155E75' },
+  { id:'dt',        label:'D.T.',      emoji:'🔧', col:'#D97706', light:'#FEF3C7', dark:'#92400E' },
+  { id:'mfl',       label:'MFL',       emoji:'🗺️',  col:'#059669', light:'#D1FAE5', dark:'#065F46' },
+  { id:'re',        label:'R.E.',      emoji:'🕊️',  col:'#7C3AED', light:'#EDE9FE', dark:'#4C1D95' },
+  { id:'other',     label:'Other',     emoji:'📚', col:'#6B7280', light:'#F3F4F6', dark:'#374151' },
+];
+const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
+const STEP_TYPES = [
+  { v:'copy_title', l:'📋 Copy Title & Date' },
+  { v:'copy_title_full', l:'📋 Copy Name, Class, Title & Date' },
+  { v:'heading', l:'🏷️ Section Heading' },
+  { v:'instruction', l:'📌 Instruction' },
+  { v:'task', l:'✏️ Activity / Task' },
+  { v:'think', l:'🤔 Think & Discuss' },
+];
+const STICKERS = [
+  { id:'star',    emoji:'⭐', name:'Star' },
+  { id:'gold',    emoji:'🌟', name:'Gold Star' },
+  { id:'sparkle', emoji:'✨', name:'Sparkle' },
+  { id:'medal',   emoji:'🥇', name:'Gold Medal' },
+  { id:'trophy',  emoji:'🏆', name:'Trophy' },
+  { id:'target',  emoji:'🎯', name:'Bullseye' },
+  { id:'owl',     emoji:'🦉', name:'Wise Owl' },
+  { id:'rocket',  emoji:'🚀', name:'Rocket' },
+  { id:'diamond', emoji:'💎', name:'Diamond' },
+  { id:'crown',   emoji:'👑', name:'Crown' },
+];
+
+// ── storage ────────────────────────────────────────────────────
+const TASK_KEY = 'ft_tasks_v2', SET_KEY = 'ft_settings_v2', STICK_KEY = 'ft_stickers_v1';
+
+const defTasks = () => [{
+  id: genId(), subject:'english', title:'Descriptive Writing', date: todayISO(), timerMins: 0,
+  vocab: [
+    { id: genId(), word: 'Adjective', def: 'A word that describes a noun, e.g. "golden", "enormous"' },
+    { id: genId(), word: 'Adverb', def: 'A word that describes a verb, e.g. "silently", "slowly"' },
+  ],
+  steps:[
+    { id:genId(), type:'copy_title' },
+    { id:genId(), type:'instruction', icon:'📖', text:'Open your English book to a fresh page', detail:'Leave the first line blank for a title' },
+    { id:genId(), type:'instruction', icon:'🤔', text:'Think of a magical place', detail:'Close your eyes — picture it clearly in your mind' },
+    { id:genId(), type:'task', icon:'✏️', text:'Write your opening sentence', detail:'Try starting with an adverb: "Silently...", "Suddenly..."' },
+    { id:genId(), type:'task', icon:'🌟', text:'Add adjectives to describe what you can see', detail:'Think about colours, shapes, sizes and textures' },
+  ]
+}];
+
+const loadTasks = () => { try { return JSON.parse(localStorage.getItem(TASK_KEY)) || defTasks(); } catch { return defTasks(); } };
+const saveTasks = t => { try { localStorage.setItem(TASK_KEY, JSON.stringify(t)); } catch {} };
+const loadSettings = () => {
+  try {
+    const s = JSON.parse(localStorage.getItem(SET_KEY));
+    if (!s) return { warnAt:35, alertAt:65, pin:'1234', classCode:genClassCode(), className:'My Class' };
+    if (!s.classCode) s.classCode = genClassCode();
+    return { warnAt:35, alertAt:65, pin:'1234', className:'My Class', ...s };
+  } catch { return { warnAt:35, alertAt:65, pin:'1234', classCode:genClassCode(), className:'My Class' }; }
+};
+const saveSettings = s => { try { localStorage.setItem(SET_KEY, JSON.stringify(s)); } catch {} };
+const loadStickers = () => { try { return JSON.parse(localStorage.getItem(STICK_KEY)) || []; } catch { return []; } };
+const saveStickers = s => { try { localStorage.setItem(STICK_KEY, JSON.stringify(s)); } catch {} };
+const PUPIL_KEY = 'ft_pupil_name';
+const loadPupilName = () => { try { return localStorage.getItem(PUPIL_KEY) || ''; } catch { return ''; } };
+const savePupilName = n => { try { localStorage.setItem(PUPIL_KEY, n); } catch {} };
+const earnSticker = () => {
+  const c = loadStickers();
+  const next = STICKERS[c.length % STICKERS.length];
+  saveStickers([...c, { ...next, earnedAt: Date.now() }]);
+  return next;
+};
+
+// ── audio ──────────────────────────────────────────────────────
+const playBeeps = (n = 3) => {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    Array.from({ length: n }, (_, i) => i * 0.45).forEach(delay => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = 880; osc.type = 'sine';
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + delay);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.35);
+      osc.start(ctx.currentTime + delay);
+      osc.stop(ctx.currentTime + delay + 0.4);
+    });
+  } catch {}
+};
+
+// ── noise hook ─────────────────────────────────────────────────
+function useNoise() {
+  const [level, setLevel] = useState(0);
+  const [perm, setPerm] = useState('idle');
+  const rafRef = useRef(null);
+  const streamRef = useRef(null);
+  const ctxRef = useRef(null);
+  const start = useCallback(async () => {
+    if (perm === 'granted' || perm === 'requesting') return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { setPerm('unsupported'); return; }
+    // Check permission state first so Chrome can show the prompt if needed
+    try {
+      const ps = await navigator.permissions.query({ name: 'microphone' });
+      if (ps.state === 'denied') { setPerm('denied'); return; }
+    } catch {}
+    setPerm('requesting');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.82;
+      ctx.createMediaStreamSource(stream).connect(analyser);
+      streamRef.current = stream; ctxRef.current = ctx; setPerm('granted');
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteFrequencyData(buf);
+        const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
+        setLevel(Math.min(100, Math.round(rms * 3.2)));
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    } catch(e) {
+      setPerm(e && e.name === 'NotFoundError' ? 'unsupported' : 'denied');
+    }
+  }, [perm]);
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    streamRef.current?.getTracks().forEach(t => t.stop());
+    try { if (ctxRef.current?.state !== 'closed') ctxRef.current?.close(); } catch {}
+  }, []);
+  const retry = useCallback(() => { setPerm('idle'); }, []);
+  return { level, perm, start, retry };
+}
+
+// ── timer hook ─────────────────────────────────────────────────
+function useTimer() {
+  const [timerState, setTimerState] = useState('idle');
+  const [total, setTotal] = useState(0);
+  const [remaining, setRemaining] = useState(0);
+  const ivRef = useRef(null);
+  const startTimer = mins => { const s = mins * 60; setTotal(s); setRemaining(s); setTimerState('running'); };
+  const pauseTimer = () => setTimerState(s => s === 'running' ? 'paused' : 'running');
+  const resetTimer = () => { clearInterval(ivRef.current); setTimerState('idle'); setTotal(0); setRemaining(0); };
+  useEffect(() => {
+    if (timerState !== 'running') { clearInterval(ivRef.current); return; }
+    ivRef.current = setInterval(() => {
+      setRemaining(r => { if (r <= 1) { setTimerState('done'); return 0; } return r - 1; });
+    }, 1000);
+    return () => clearInterval(ivRef.current);
+  }, [timerState]);
+  return { timerState, total, remaining, startTimer, pauseTimer, resetTimer };
+}
+
+// ── confetti ───────────────────────────────────────────────────
+function Confetti() {
+  const ref = useRef(null);
+  useEffect(() => {
+    const canvas = ref.current; if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resize = () => { canvas.width = innerWidth; canvas.height = innerHeight; };
+    resize(); window.addEventListener('resize', resize);
+    const cols = ['#3B82F6','#F97316','#22C55E','#EAB308','#EC4899','#8B5CF6','#06B6D4'];
+    const ps = Array.from({ length: 140 }, () => ({
+      x: Math.random()*innerWidth, y: -20-Math.random()*80, w:9+Math.random()*8, h:5+Math.random()*5,
+      col:cols[Math.floor(Math.random()*cols.length)], vy:3+Math.random()*5, vx:(Math.random()-.5)*4,
+      a:Math.random()*Math.PI*2, spin:(Math.random()-.5)*.15, op:1
+    }));
+    let alive = true; const t0 = Date.now();
+    const draw = () => {
+      const el = Date.now()-t0; ctx.clearRect(0,0,canvas.width,canvas.height);
+      ps.forEach(p => {
+        p.y+=p.vy; p.x+=p.vx; p.a+=p.spin;
+        if (el>3500) p.op = Math.max(0,p.op-.012);
+        ctx.save(); ctx.globalAlpha=p.op; ctx.translate(p.x+p.w/2,p.y+p.h/2); ctx.rotate(p.a);
+        ctx.fillStyle=p.col; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+      });
+      if (alive && el<6500) requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { alive=false; window.removeEventListener('resize',resize); };
+  }, []);
+  return html`<canvas ref=${ref}></canvas>`;
+}
+
+// ── NoiseMeter ─────────────────────────────────────────────────
+function NoiseMeter({ level, perm, settings, onStart, onRetry }) {
+  const { warnAt=35, alertAt=65 } = settings;
+  if (perm==='unsupported') return html`<div class="n-btn" style=${{cursor:'default'}}>🎤 No mic found</div>`;
+  if (perm==='denied') return html`<div style=${{display:'flex',flexDirection:'column',gap:'5px',alignItems:'flex-start'}}>
+    <button class="n-btn" onClick=${()=>{onRetry();setTimeout(onStart,50);}} style=${{alignSelf:'stretch',justifyContent:'center'}}>🔄 Retry mic</button>
+    <span style=${{fontSize:'.7rem',fontWeight:700,color:'var(--faint)',lineHeight:1.4,maxWidth:'260px'}}>
+      In Chrome: click the 🔒 lock in the address bar → Site settings → Microphone → Allow, then retry.
+    </span>
+  </div>`;
+  if (perm==='idle') return html`<button class="n-btn" onClick=${onStart}>🎤 Turn on noise meter</button>`;
+  if (perm==='requesting') return html`<div class="n-btn">⏳ Starting…</div>`;
+  let cls,emoji,label,fill;
+  if (level>=alertAt){cls='loud';emoji='😬';label='Too noisy!';fill='#EF4444';}
+  else if (level>=warnAt){cls='warn';emoji='🤫';label='Getting noisy…';fill='#F59E0B';}
+  else{cls='';emoji='😊';label='Lovely and quiet';fill='#22C55E';}
+  return html`<div class=${'noise '+cls}>
+    <span class="n-emoji">${emoji}</span>
+    <div class="n-track"><div class="n-fill" style=${{width:level+'%',background:fill}}></div></div>
+    <span class="n-label" style=${{color:fill}}>${label}</span>
+  </div>`;
+}
+
+// ── TimerStrip ─────────────────────────────────────────────────
+function TimerStrip({ timerMins, timerState, total, remaining, onStart, onPause, onReset }) {
+  const CIRC = 251.33;
+  const pct = total>0 ? remaining/total : 1;
+  const offset = CIRC*(1-pct);
+  const timeStr = Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+  const ringColor = pct<0.25?'#EF4444':pct<0.5?'#F59E0B':'#3B82F6';
+  const extras = timerMins>0 && ![1,2,5].includes(timerMins) ? timerMins : null;
+  if (timerState==='idle') return html`<div class="timer-strip">
+    <div class="timer-quick">
+      <span class="timer-label">⏱ Quick timer:</span>
+      ${[1,2,5].map(m=>html`<button key=${m} class="timer-chip" onClick=${()=>onStart(m)}>${m} min</button>`)}
+      ${extras!==null?html`<button class="timer-chip" style=${{borderColor:'var(--violet)',background:'var(--violet-l)',color:'var(--violet)'}} onClick=${()=>onStart(extras)}>${extras} min ★</button>`:null}
+    </div>
+  </div>`;
+  return html`<div class="timer-strip">
+    <div class="timer-ring-wrap">
+      <svg width="82" height="82" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" strokeWidth="8"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke=${ringColor} strokeWidth="8"
+          strokeDasharray=${CIRC} strokeDashoffset=${offset} strokeLinecap="round"
+          transform="rotate(-90 50 50)" style=${{transition:'stroke-dashoffset 1s linear,stroke .5s'}}/>
+        <text x="50" y="50" textAnchor="middle" dominantBaseline="middle"
+          fontFamily="'Fredoka One',cursive" fontSize="18" fill="var(--text)">${timeStr}</text>
+      </svg>
+      <div class="timer-btns">
+        <button class="btn btn-secondary" style=${{padding:'7px 13px',fontSize:'.85rem',minHeight:'38px'}} onClick=${onPause}>
+          ${timerState==='running'?'⏸ Pause':'▶ Resume'}
+        </button>
+        <button class="btn btn-ghost" style=${{padding:'7px 13px',fontSize:'.85rem',minHeight:'38px'}} onClick=${onReset}>✕</button>
+      </div>
+      ${timerState==='done'?html`<div class="timer-done-pill">⏰ Time's up!</div>`:null}
+    </div>
+  </div>`;
+}
+
+// ── WordBankPanel ──────────────────────────────────────────────
+function WordBankPanel({ vocab, onClose }) {
+  return html`<div class="wb-backdrop" onClick=${onClose}>
+    <div class="wb-panel" onClick=${e=>e.stopPropagation()}>
+      <div class="wb-head">
+        <h3>📖 Word Bank</h3>
+        <button class="icon-btn" onClick=${onClose}>✕</button>
+      </div>
+      <div class="wb-list">
+        ${vocab.map((item,i)=>html`<div key=${i} class="wb-item">
+          <span class="wb-word">${item.word}</span>
+          <span class="wb-def">${item.def}</span>
+        </div>`)}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── NameEntry ──────────────────────────────────────────────────
+function NameEntry({ initial, onDone }) {
+  const [name, setName] = useState(initial || '');
+  const submit = () => { const n = name.trim(); if (!n) return; savePupilName(n); onDone(n); };
+  return html`<div class="ne-overlay">
+    <div class="ne-card">
+      <div class="ne-pencil">✏️</div>
+      <h2 class="ne-title">What's your name?</h2>
+      <p class="ne-sub">Put your name on your work!</p>
+      <input class="ne-input" type="text" placeholder="Type your name…" value=${name} maxlength="30"
+        autoFocus
+        onInput=${e=>setName(e.target.value)}
+        onKeyDown=${e=>e.key==='Enter'&&submit()}/>
+      <button class="btn btn-primary btn-full" style=${{fontSize:'1.1rem',padding:'14px'}} disabled=${!name.trim()} onClick=${submit}>
+        ✅ That's me!
+      </button>
+    </div>
+  </div>`;
+}
+
+// ── CheckIn ────────────────────────────────────────────────────
+function CheckIn({ onDone }) {
+  const [countdown, setCountdown] = useState(5);
+  useEffect(() => {
+    const iv = setInterval(() => setCountdown(c => { if (c<=1){clearInterval(iv);onDone(null);return 0;} return c-1;}), 1000);
+    return ()=>clearInterval(iv);
+  }, []);
+  const opts = [{e:'😊',l:'Got it!',k:'happy'},{e:'😐',l:'OK...',k:'ok'},{e:'😕',l:'Not sure',k:'unsure'}];
+  return html`<div class="ci-overlay">
+    <div class="ci-card">
+      <p class="ci-q">How are you finding it?</p>
+      <div class="ci-btns">
+        ${opts.map(o=>html`<button key=${o.k} class="ci-btn" onClick=${()=>onDone(o.k)}>
+          <span class="ci-emo">${o.e}</span>
+          <span class="ci-lbl">${o.l}</span>
+        </button>`)}
+      </div>
+      <p class="ci-auto">Moving on in ${countdown}s…</p>
+    </div>
+  </div>`;
+}
+
+// ── CopyTitleStep ──────────────────────────────────────────────
+function CopyTitleStep({ step, task, pupilName, className }) {
+  const full = step.type === 'copy_title_full';
+  const [ph,setPh] = useState(0);
+  useEffect(()=>{
+    let ts;
+    if (full) {
+      // name → ul → class → ul → title → ul → date → ul → done
+      ts = [
+        setTimeout(()=>setPh(1), 500),   // name text
+        setTimeout(()=>setPh(2), 1400),  // name underline
+        setTimeout(()=>setPh(3), 2000),  // class text
+        setTimeout(()=>setPh(4), 2900),  // class underline
+        setTimeout(()=>setPh(5), 3500),  // title text
+        setTimeout(()=>setPh(6), 4400),  // title underline
+        setTimeout(()=>setPh(7), 5000),  // date text
+        setTimeout(()=>setPh(8), 5900),  // date underline
+        setTimeout(()=>setPh(9), 6600),  // done
+      ];
+    } else {
+      ts = [
+        setTimeout(()=>setPh(1), 600),
+        setTimeout(()=>setPh(2), 1700),
+        setTimeout(()=>setPh(3), 2800),
+        setTimeout(()=>setPh(4), 4000),
+        setTimeout(()=>setPh(5), 5000),
+      ];
+    }
+    return ()=>ts.forEach(clearTimeout);
+  },[]);
+
+  if (full) return html`<div class="copy-step">
+    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy your name, class, title and date — underline each one</span></div>
+    <div class="lined-paper four-lines">
+      <div class="copy-line"><span class=${'clt'+(ph>=1?' show':'')}>${pupilName||'Your Name'}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${className||'Your Class'}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=5?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=6?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=7?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul'+(ph>=8?' show':'')}></span></div>
+    </div>
+    ${ph>=9?html`<div class="copy-done">✅ Brilliant — now copy all four lines in your book and underline them!</div>`:null}
+  </div>`;
+
+  return html`<div class="copy-step">
+    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy the title and date — then underline both</span></div>
+    <div class="lined-paper">
+      <div class="copy-line"><span class=${'clt'+(ph>=1?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
+    </div>
+    ${ph>=5?html`<div class="copy-done">✅ Great work — now do the same in your book!</div>`:null}
+  </div>`;
+}
+
+// ── InstructionStep ────────────────────────────────────────────
+function InstructionStep({ step }) {
+  const type = STEP_TYPES.find(t=>t.v===step.type)||STEP_TYPES[1];
+  const cols = {instruction:['#DBEAFE','#1D4ED8'],task:['#FFEDD5','#C2410C'],think:['#EDE9FE','#6D28D9']};
+  const [bg,fg] = cols[step.type]||cols.instruction;
+  return html`<div class="inst-step">
+    <div class="step-big-icon">${step.icon||'📌'}</div>
+    <span class="step-type-lbl" style=${{background:bg,color:fg}}>${type.l}</span>
+    <h2 class="step-main">${step.text||'Step'}</h2>
+    ${step.detail?html`<p class="step-detail">${step.detail}</p>`:null}
+  </div>`;
+}
+
+// ── HeadingStep ────────────────────────────────────────────────
+function HeadingStep({ step }) {
+  const [ph, setPh] = useState(0);
+  useEffect(() => {
+    const ts = [
+      setTimeout(() => setPh(1), 500),
+      setTimeout(() => setPh(2), 1500),
+      setTimeout(() => setPh(3), 2300),
+    ];
+    return () => ts.forEach(clearTimeout);
+  }, []);
+  return html`<div class="copy-step">
+    <div class="copy-hdr">
+      <span class="copy-pencil">✏️</span>
+      <span class="copy-hdr-text">Write the section heading — then underline it</span>
+    </div>
+    <div class="lined-paper">
+      <div class="copy-line">
+        <span class=${'clt'+(ph>=1?' show':'')} style=${{fontSize:'clamp(1.4rem,4.5vw,2rem)'}}>${step.text||'Section Heading'}</span>
+        <span class=${'cl-ul'+(ph>=2?' show':'')}></span>
+      </div>
+    </div>
+    ${step.detail?html`<div class="copy-done" style=${{background:'var(--violet-l)',color:'var(--violet)'}}>${step.detail}</div>`:null}
+    ${ph>=3&&!step.detail?html`<div class="copy-done">✅ Now write this heading in your book and underline it!</div>`:null}
+  </div>`;
+}
+
+// ── StickerBook ────────────────────────────────────────────────
+function StickerBook({ onBack }) {
+  const stickers = loadStickers();
+  return html`<div class="sb-screen">
+    <div class="ph" style=${{background:'linear-gradient(135deg,#6366F1,#8B5CF6)',borderBottom:'none'}}>
+      <button class="back" style=${{background:'rgba(255,255,255,.2)',color:'#fff',border:'none'}} onClick=${onBack}>← Back</button>
+      <h1 style=${{color:'#fff'}}>⭐ My Stickers</h1>
+      <span style=${{color:'rgba(255,255,255,.8)',fontWeight:800,fontSize:'.95rem',whiteSpace:'nowrap'}}>${stickers.length} earned</span>
+    </div>
+    <div class="sb-body">
+      ${stickers.length===0?html`<div class="empty"><div class="empty-ico">⭐</div><p class="empty-txt">Finish tasks to earn stickers!</p></div>`:
+      html`<div class="sticker-grid">${stickers.map((s,i)=>html`<div key=${i} class="sticker-cell" style=${{animationDelay:(i*.04)+'s'}}>
+        <div class="sticker-emoji">${s.emoji}</div><div class="sticker-name">${s.name}</div><div class="sticker-num">#${i+1}</div>
+      </div>`)}</div>`}
+    </div>
+  </div>`;
+}
+
+// ── BoardTimer ─────────────────────────────────────────────────
+function BoardTimer({ onExit }) {
+  const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
+  const [customMins, setCustomMins] = useState(3);
+  const CIRC = 502.65; // 2*PI*80
+  const pct = timerState==='idle'?1:(total>0?remaining/total:0);
+  const offset = CIRC*(1-pct);
+  const ringColor = timerState==='idle'?'rgba(255,255,255,0.15)':pct<0.25?'#EF4444':pct<0.5?'#F59E0B':'#3B82F6';
+  const timeStr = timerState==='idle'?'—:——':Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+  const isActive = timerState!=='idle';
+
+  useEffect(()=>{ if (timerState==='done') playBeeps(3); },[timerState]);
+
+  return html`<div class="bt-screen">
+    <button class="bt-exit" onClick=${onExit}>← Back to dashboard</button>
+    <div class="bt-ring-outer">
+      <svg width="260" height="260" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="80" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="14"/>
+        <circle cx="100" cy="100" r="80" fill="none" stroke=${ringColor} strokeWidth="14"
+          strokeDasharray=${CIRC} strokeDashoffset=${offset} strokeLinecap="round"
+          transform="rotate(-90 100 100)"
+          style=${{transition:'stroke-dashoffset 1s linear,stroke .5s',animation:timerState==='done'?'ringPulse .8s infinite':''}}/>
+        <text x="100" y="93" textAnchor="middle" fontFamily="'Fredoka One',cursive" fontSize="36" fill="white">${timeStr}</text>
+        ${timerState!=='idle'&&timerState!=='done'?html`<text x="100" y="122" textAnchor="middle" fontFamily="'Nunito',sans-serif" fontSize="13" fontWeight="800" fill="rgba(255,255,255,0.5)">${timerState==='paused'?'PAUSED':'FOCUS'}</text>`:null}
+      </svg>
+    </div>
+    ${timerState==='done'?html`<p class="bt-done">⏰ Time's up!</p>`:null}
+    ${!isActive?html`<div class="bt-presets">
+      ${[5,10,15,20].map(m=>html`<button key=${m} class="bt-preset" onClick=${()=>startTimer(m)}>${m} min</button>`)}
+      <div class="bt-custom">
+        <input class="bt-input" type="number" min="1" max="90" value=${customMins}
+          onInput=${e=>setCustomMins(Math.max(1,parseInt(e.target.value)||1))}/>
+        <button class="bt-preset" onClick=${()=>startTimer(customMins)}>${customMins} min</button>
+      </div>
+    </div>`:html`<div class="bt-ctrls">
+      <button class="bt-pause" onClick=${pauseTimer}>${timerState==='running'?'⏸ Pause':'▶ Resume'}</button>
+      <button class="bt-reset" onClick=${resetTimer}>↺ Reset</button>
+    </div>`}
+  </div>`;
+}
+
+// ── PupilMode ──────────────────────────────────────────────────
+function PupilMode({ task, settings, db, onExit }) {
+  const [pupilName, setPupilName] = useState(() => loadPupilName());
+  const [showNameEntry, setShowNameEntry] = useState(() => !loadPupilName());
+  const [idx, setIdx] = useState(0);
+  const [done, setDone] = useState(false);
+  const [stepKey, setStepKey] = useState(0);
+  const [earnedSticker, setEarnedSticker] = useState(null);
+  const [showWordBank, setShowWordBank] = useState(false);
+  const [helpSent, setHelpSent] = useState(false);
+  const [checkinPending, setCheckinPending] = useState(false);
+  const [pendingNext, setPendingNext] = useState(0);
+  const { level, perm, start, retry } = useNoise();
+  const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
+  const subj = SUBJECTS.find(s=>s.id===task.subject)||SUBJECTS[7];
+  const totalSteps = task.steps.length;
+  const step = task.steps[idx];
+  const hasVocab = (task.vocab||[]).length > 0;
+
+  const finish = () => { const s=earnSticker(); setEarnedSticker(s); setDone(true); };
+
+  const go = dir => {
+    const next = idx+dir;
+    if (next<0) return;
+    if (next>=totalSteps) { finish(); return; }
+    if (dir===1) { setPendingNext(next); setCheckinPending(true); return; }
+    setIdx(next); setStepKey(k=>k+1);
+  };
+
+  const resolveCheckin = reaction => {
+    setCheckinPending(false);
+    if (reaction && db && settings?.classCode) {
+      const ref = db.doc('checkins/'+settings.classCode);
+      ref.get().then(snap=>{
+        const d = snap.exists?snap.data():{happy:0,ok:0,unsure:0};
+        ref.set({...d,[reaction]:(d[reaction]||0)+1,updatedAt:Date.now()});
+      }).catch(()=>{});
+    }
+    setIdx(pendingNext); setStepKey(k=>k+1);
+  };
+
+  const sendHelp = async () => {
+    setHelpSent(true);
+    setTimeout(()=>setHelpSent(false), 3000);
+    if (!db || !settings?.classCode) return;
+    try {
+      const ref = db.doc('helpSignals/'+settings.classCode);
+      const snap = await ref.get();
+      const count = snap.exists?(snap.data().count||0):0;
+      await ref.set({count:count+1,updatedAt:Date.now()});
+    } catch {}
+  };
+
+  if (showNameEntry) return html`<${NameEntry} initial=${pupilName} onDone=${n=>{setPupilName(n);setShowNameEntry(false);}}/>`;
+
+  if (done) return html`<div class="comp-screen">
+    <${Confetti}/>
+    <div class="comp-inner">
+      <div class="comp-star">⭐</div>
+      <h1 class="comp-title">Amazing work${pupilName?', '+pupilName:''}!</h1>
+      <p class="comp-sub">You finished — ${task.title}</p>
+      ${earnedSticker?html`<div class="comp-sticker">
+        <div class="comp-sticker-lbl">You earned a sticker!</div>
+        <div class="comp-sticker-emo">${earnedSticker.emoji}</div>
+        <div class="comp-sticker-name">${earnedSticker.name}</div>
+      </div>`:null}
+      <div class="star-row">🌟🌟🌟🌟🌟</div>
+      <button class="btn btn-secondary" style=${{marginTop:'8px',background:'rgba(255,255,255,.2)',color:'#fff',border:'2px solid rgba(255,255,255,.35)'}} onClick=${onExit}>← Back to start</button>
+    </div>
+  </div>`;
+
+  return html`<div class="pu-screen">
+    ${checkinPending?html`<${CheckIn} onDone=${resolveCheckin}/>`:null}
+    ${showWordBank?html`<${WordBankPanel} vocab=${task.vocab||[]} onClose=${()=>setShowWordBank(false)}/>`:null}
+    <div class="pu-top">
+      <div class="pu-info">
+        <span class="pu-badge" style=${{background:subj.light,color:subj.dark}}>${subj.emoji} ${subj.label}</span>
+        <span class="pu-title">${task.title}</span>
+        ${pupilName?html`<button class="ne-name-chip" title="Change name" onClick=${()=>setShowNameEntry(true)}>✏️ ${pupilName}</button>`:null}
+        ${hasVocab?html`<button class="words-btn" onClick=${()=>setShowWordBank(true)}>📖 Words</button>`:null}
+        <button class=${'help-btn'+(helpSent?' sent':'')} onClick=${sendHelp}>
+          ${helpSent?'✓ Sent!':'🙋 Help'}
+        </button>
+        <button class="back" onClick=${onExit} style=${{flexShrink:0}}>✕ Exit</button>
+      </div>
+      <${NoiseMeter} level=${level} perm=${perm} settings=${settings} onStart=${start} onRetry=${retry}/>
+    </div>
+    <${TimerStrip} timerMins=${task.timerMins||0} timerState=${timerState} total=${total} remaining=${remaining} onStart=${startTimer} onPause=${pauseTimer} onReset=${resetTimer}/>
+    <div class="prog-bar">
+      <div class="prog-track"><div class="prog-fill" style=${{width:((idx+1)/totalSteps*100)+'%'}}></div></div>
+      <span class="prog-lbl">Step ${idx+1} of ${totalSteps}</span>
+    </div>
+    <div class="step-area" key=${stepKey}>
+      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:html`<${InstructionStep} step=${step}/>`}
+    </div>
+    <div class="pu-nav">
+      <button class="btn btn-secondary" onClick=${()=>go(-1)} disabled=${idx===0}>← Back</button>
+      <div class="step-dots">${task.steps.map((_,i)=>html`<div key=${i} class=${'sdot'+(i===idx?' cur':i<idx?' done':'')}></div>`)}</div>
+      <button class="btn btn-primary" onClick=${()=>go(1)}>${idx<totalSteps-1?'Next →':'✅ Finish!'}</button>
+    </div>
+  </div>`;
+}
+
+// ── TaskEditor ─────────────────────────────────────────────────
+function TaskEditor({ init, onSave, onCancel }) {
+  const [task,setTask] = useState(()=>init||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}]});
+  const [sampleApi, setSampleApi] = useState(null);
+  const [generating, setGenerating] = useState({});
+  const up = (k,v) => setTask(t=>({...t,[k]:v}));
+  const upStep=(i,k,v)=>setTask(t=>({...t,steps:t.steps.map((s,j)=>j===i?{...s,[k]:v}:s)}));
+  const addStep=()=>setTask(t=>({...t,steps:[...t.steps,{id:genId(),type:'instruction',icon:'📌',text:'',detail:''}]}));
+  const delStep=i=>setTask(t=>({...t,steps:t.steps.filter((_,j)=>j!==i)}));
+  const moveStep=(i,d)=>setTask(t=>{const s=[...t.steps];const j=i+d;if(j<0||j>=s.length)return t;[s[i],s[j]]=[s[j],s[i]];return{...t,steps:s};});
+  const addVocab=()=>setTask(t=>({...t,vocab:[...(t.vocab||[]),{id:genId(),word:'',def:''}]}));
+  const delVocab=i=>setTask(t=>({...t,vocab:(t.vocab||[]).filter((_,j)=>j!==i)}));
+  const upVocab=(i,k,v)=>setTask(t=>({...t,vocab:(t.vocab||[]).map((item,j)=>j===i?{...item,[k]:v}:item)}));
+  const canSave = task.title.trim().length>0;
+
+  useEffect(()=>{
+    if(window.claude&&typeof window.claude.use==='function')
+      window.claude.use('sample').then(s=>{if(s)setSampleApi(()=>s);}).catch(()=>{});
+  },[]);
+
+  const aiDef = async (i, word) => {
+    if (!sampleApi || !word.trim() || generating[i]) return;
+    setGenerating(g=>({...g,[i]:true}));
+    try {
+      const res = await sampleApi(
+        `Write a short, simple definition or helpful clue for the word "${word.trim()}" suitable for primary school pupils aged 7-11. One sentence only. Plain language — no jargon. Just the definition text, nothing else.`,
+        { modelTier: 'quick' }
+      );
+      upVocab(i, 'def', res.text.trim());
+    } catch {}
+    setGenerating(g=>({...g,[i]:false}));
+  };
+
+  return html`<div class="ed-screen">
+    <div class="ph"><button class="back" onClick=${onCancel}>← Back</button><h1>${init?'Edit Task':'✨ New Task'}</h1></div>
+    <div class="ed-body">
+      <div class="fcard">
+        <label class="flabel">Subject</label>
+        <div class="chips">${SUBJECTS.map(s=>html`<button key=${s.id} class=${'chip'+(task.subject===s.id?' sel':'')} style=${{'--cc':s.col}} onClick=${()=>up('subject',s.id)}>${s.emoji} ${s.label}</button>`)}</div>
+      </div>
+      <div class="fcard">
+        <label class="flabel">Lesson Title</label>
+        <input class="finput" type="text" value=${task.title} placeholder="e.g. Descriptive Writing" onInput=${e=>up('title',e.target.value)}/>
+      </div>
+      <div class="fcard">
+        <label class="flabel">Date</label>
+        <input class="finput" type="date" value=${task.date} style=${{maxWidth:'220px'}} onInput=${e=>up('date',e.target.value)}/>
+      </div>
+      <div class="fcard">
+        <label class="flabel">Focus Timer (optional)</label>
+        <div style=${{display:'flex',alignItems:'center',gap:'12px',flexWrap:'wrap'}}>
+          <input class="finput" type="number" min="0" max="60" value=${task.timerMins||0} style=${{maxWidth:'88px'}} onInput=${e=>up('timerMins',Math.max(0,parseInt(e.target.value)||0))}/>
+          <span style=${{color:'var(--faint)',fontWeight:700,fontSize:'.88rem'}}>minutes (0 = no timer)</span>
+        </div>
+      </div>
+      <div class="fcard">
+        <label class="flabel">Word Bank (optional)</label>
+        <div class="steps-list">
+          ${(task.vocab||[]).map((item,i)=>html`<div key=${item.id} class="step-item">
+            <div class="si-body">
+              <div style=${{display:'flex',gap:'8px'}}>
+                <input class="finput" style=${{flex:1}} type="text" value=${item.word||''} placeholder="Word…" onInput=${e=>upVocab(i,'word',e.target.value)}/>
+                <button class="icon-btn danger" onClick=${()=>delVocab(i)}>✕</button>
+              </div>
+              <div style=${{display:'flex',gap:'8px',alignItems:'center'}}>
+                <input class="finput" style=${{flex:1}} type="text" value=${item.def||''} placeholder="Definition or helpful clue…" onInput=${e=>upVocab(i,'def',e.target.value)}/>
+                <button class="ai-def-btn" disabled=${!sampleApi||generating[i]||!item.word?.trim()} onClick=${()=>aiDef(i,item.word)} title="Generate with AI">
+                  ${generating[i]?'⏳':'✨ AI'}
+                </button>
+              </div>
+            </div>
+          </div>`)}
+        </div>
+        <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${addVocab}>+ Add Word</button>
+      </div>
+      <div class="fcard">
+        <label class="flabel">Steps</label>
+        <div class="steps-list">
+          ${task.steps.map((step,i)=>html`<div key=${step.id} class="step-item">
+            <div class="si-head">
+              <div class="si-num">${i+1}</div>
+              <select class="si-type" value=${step.type} onChange=${e=>upStep(i,'type',e.target.value)}>
+                ${STEP_TYPES.map(t=>html`<option key=${t.v} value=${t.v}>${t.l}</option>`)}
+              </select>
+              <div class="si-acts">
+                <button class="icon-btn" onClick=${()=>moveStep(i,-1)} disabled=${i===0}>↑</button>
+                <button class="icon-btn" onClick=${()=>moveStep(i,1)} disabled=${i===task.steps.length-1}>↓</button>
+                <button class="icon-btn danger" onClick=${()=>delStep(i)}>✕</button>
+              </div>
+            </div>
+            ${(step.type==='heading')?html`<div class="si-body">
+              <input class="finput" type="text" value=${step.text||''} placeholder="Section heading…" onInput=${e=>upStep(i,'text',e.target.value)}/>
+              <input class="finput" type="text" value=${step.detail||''} placeholder="Optional subtitle…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
+            </div>`:null}
+            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading')?html`<div class="si-body">
+              <div class="icon-grid">${ICONS.map(ic=>html`<button key=${ic} class=${'ic-opt'+(step.icon===ic?' sel':'')} onClick=${()=>upStep(i,'icon',ic)}>${ic}</button>`)}</div>
+              <input class="finput" type="text" value=${step.text||''} placeholder="Instruction text…" onInput=${e=>upStep(i,'text',e.target.value)}/>
+              <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
+            </div>`:null}
+          </div>`)}
+        </div>
+        <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${addStep}>+ Add Step</button>
+      </div>
+    </div>
+    <div class="ed-footer">
+      <button class="btn btn-secondary" onClick=${onCancel}>Cancel</button>
+      <button class="btn btn-primary" disabled=${!canSave} onClick=${()=>canSave&&onSave(task)}>💾 Save Task</button>
+    </div>
+  </div>`;
+}
+
+// ── TeacherMode ────────────────────────────────────────────────
+function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
+  const [tasks,setTasks] = useState(loadTasks);
+  const [editing,setEditing] = useState(null);
+  const [settings,setSettings] = useState(loadSettings);
+  const [showSettings,setShowSettings] = useState(false);
+  const [showLive,setShowLive] = useState(false);
+  const [publishState,setPublishState] = useState('idle');
+  const [helpCount,setHelpCount] = useState(0);
+  const [checkins,setCheckins] = useState({happy:0,ok:0,unsure:0});
+
+  useEffect(()=>{
+    if (!db||!settings.classCode) return;
+    const u1 = db.doc('helpSignals/'+settings.classCode).onSnapshot(snap=>{ if(snap.exists) setHelpCount(snap.data().count||0); },()=>{});
+    const u2 = db.doc('checkins/'+settings.classCode).onSnapshot(snap=>{ if(snap.exists) setCheckins(d=>({...d,...snap.data()})); },()=>{});
+    return ()=>{ u1(); u2(); };
+  },[db, settings.classCode]);
+
+  const saveTask=t=>{const next=tasks.find(x=>x.id===t.id)?tasks.map(x=>x.id===t.id?t:x):[...tasks,t];setTasks(next);saveTasks(next);setEditing(null);};
+  const delTask=id=>{const next=tasks.filter(t=>t.id!==id);setTasks(next);saveTasks(next);};
+  const updSet=patch=>{const s={...settings,...patch};setSettings(s);saveSettings(s);};
+
+  const publishToClass=async()=>{
+    if(!db){setPublishState('err');setTimeout(()=>setPublishState('idle'),3000);return;}
+    setPublishState('loading');
+    try {
+      await db.doc('classes/'+settings.classCode).set({name:settings.className||'My Class',tasks,updatedAt:Date.now()});
+      setPublishState('ok'); setTimeout(()=>setPublishState('idle'),3500);
+    } catch { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); }
+  };
+
+  const clearHelp=async()=>{
+    setHelpCount(0);
+    if(db&&settings.classCode) try{await db.doc('helpSignals/'+settings.classCode).set({count:0,updatedAt:Date.now()});}catch{}
+  };
+  const clearCheckins=async()=>{
+    setCheckins({happy:0,ok:0,unsure:0});
+    if(db&&settings.classCode) try{await db.doc('checkins/'+settings.classCode).set({happy:0,ok:0,unsure:0,updatedAt:Date.now()});}catch{}
+  };
+
+  const totalCheckins=(checkins.happy||0)+(checkins.ok||0)+(checkins.unsure||0);
+
+  if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
+
+  return html`<div class="t-screen">
+    <div class="ph">
+      <button class="back" onClick=${onExit}>← Home</button>
+      <h1>👩‍🏫 Teacher Dashboard</h1>
+      <button class="btn btn-secondary" style=${{padding:'8px 13px',fontSize:'.85rem',minHeight:'38px',gap:'5px'}} onClick=${onBoardTimer}>⏱ Board Timer</button>
+      <button class="icon-btn" style=${{fontSize:'1.1rem',position:'relative'}} onClick=${()=>setShowLive(s=>!s)}>
+        📡${helpCount>0?html`<span class="help-badge">${helpCount}</span>`:null}
+      </button>
+      <button class="icon-btn" style=${{fontSize:'1.3rem'}} onClick=${()=>setShowSettings(s=>!s)}>⚙️</button>
+    </div>
+    <div class="t-body">
+      ${showLive?html`<div class="settings-panel">
+        <h3>📡 Live Class</h3>
+        <div class="live-row">
+          <span>🙋 Help requests:</span>
+          <strong style=${{fontSize:'1.5rem',color:helpCount>0?'var(--red)':'var(--text)'}}>${helpCount}</strong>
+          ${helpCount>0?html`<button class="btn btn-ghost" style=${{padding:'5px 12px',fontSize:'.82rem',minHeight:'34px'}} onClick=${clearHelp}>Clear</button>`:null}
+        </div>
+        <div class="live-row">
+          <span>Check-ins:</span>
+          <div class="ci-tally">
+            <span>😊 ${checkins.happy||0}</span>
+            <span>😐 ${checkins.ok||0}</span>
+            <span>😕 ${checkins.unsure||0}</span>
+            ${totalCheckins>0?html`<button class="btn btn-ghost" style=${{padding:'4px 10px',fontSize:'.78rem',minHeight:'32px'}} onClick=${clearCheckins}>Clear</button>`:null}
+          </div>
+        </div>
+        ${!db?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700}}>Live data requires the published version</p>`:null}
+      </div>`:null}
+      ${showSettings?html`<div class="settings-panel">
+        <h3>🔧 Noise Meter</h3>
+        <div class="srow">
+          <label>Warning level: ${settings.warnAt}%</label>
+          <input type="range" min="10" max="80" value=${settings.warnAt} onInput=${e=>updSet({warnAt:+e.target.value})}/>
+        </div>
+        <div class="srow">
+          <label>Alert level: ${settings.alertAt}%</label>
+          <input type="range" min="30" max="95" value=${settings.alertAt} onInput=${e=>updSet({alertAt:+e.target.value})}/>
+        </div>
+        <div class="srow">
+          <label>Teacher PIN (4 digits)</label>
+          <input type="text" value=${settings.pin} maxlength="4" pattern="[0-9]*" inputmode="numeric" onInput=${e=>{if(/^\d{0,4}$/.test(e.target.value))updSet({pin:e.target.value});}}/>
+        </div>
+        <hr class="cs-divider"/>
+        <h3>📡 Class Sync</h3>
+        <div class="srow">
+          <label>Class Name</label>
+          <input type="text" value=${settings.className||'My Class'} style=${{width:'200px'}} onInput=${e=>updSet({className:e.target.value})}/>
+        </div>
+        <div class="srow">
+          <label>Class Code — share this with your pupils</label>
+          <div class="cs-code-box">
+            <span class="cs-code">${settings.classCode||'------'}</span>
+            <button class="icon-btn" title="Generate new code" onClick=${()=>updSet({classCode:genClassCode()})}>🔄</button>
+          </div>
+        </div>
+        ${publishState==='ok'?html`<div class="cs-ok">✅ Tasks published to class!</div>`:
+          publishState==='err'?html`<div class="cs-err">❌ ${db?'Publish failed — try again':'Class sync needs the published version'}</div>`:
+          html`<button class="btn btn-primary" onClick=${publishToClass} disabled=${publishState==='loading'}>
+            ${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}
+          </button>`}
+      </div>`:null}
+      <div class="tasks-hdr">
+        <h2>My Tasks (${tasks.length})</h2>
+        <button class="btn btn-primary" onClick=${()=>setEditing('new')}>+ Create Task</button>
+      </div>
+      ${tasks.length===0?html`<div class="empty"><div class="empty-ico">📝</div><p class="empty-txt">No tasks yet — create your first one!</p></div>`:
+      html`<div class="task-grid">${tasks.map(task=>{
+        const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
+        return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
+          <div class="tc-top">
+            <span class="sub-badge" style=${{background:s.light,color:s.dark}}>${s.emoji} ${s.label}</span>
+            <div class="tc-actions">
+              <button class="icon-btn" onClick=${()=>setEditing(task)}>✏️</button>
+              <button class="icon-btn danger" onClick=${()=>delTask(task.id)}>🗑️</button>
+            </div>
+          </div>
+          <div class="tc-body">
+            <div class="tc-title">${task.title}</div>
+            <div class="tc-meta">
+              <span>${fmtDate(task.date)}</span>
+              <span>${task.steps.length} step${task.steps.length!==1?'s':''}</span>
+              ${task.timerMins>0?html`<span>⏱ ${task.timerMins}min</span>`:null}
+              ${(task.vocab||[]).length>0?html`<span>📖 ${task.vocab.length} word${task.vocab.length!==1?'s':''}</span>`:null}
+            </div>
+          </div>
+          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${()=>onLaunch(task,settings)}>▶ Launch for Class</button></div>
+        </div>`;
+      })}</div>`}
+    </div>
+  </div>`;
+}
+
+// ── PinModal ───────────────────────────────────────────────────
+function PinModal({ pin, onOk, onCancel }) {
+  const [entered,setEntered] = useState('');
+  const [err,setErr] = useState(false);
+  const press=d=>{
+    if(d==='⌫'){setEntered(e=>e.slice(0,-1));setErr(false);return;}
+    if(entered.length>=4)return;
+    const next=entered+d; setEntered(next); setErr(false);
+    if(next.length===4) setTimeout(()=>next===pin?onOk():(setErr(true),setEntered('')),180);
+  };
+  return html`<div class="overlay" onClick=${onCancel}>
+    <div class="pin-box" onClick=${e=>e.stopPropagation()}>
+      <div class="pin-title">🔐 Teacher Login</div>
+      <p class="pin-hint">Enter your PIN to continue</p>
+      <div class=${'pin-dots'+(err?' err':'')}>
+        ${[0,1,2,3].map(i=>html`<div key=${i} class=${'pin-dot'+(entered.length>i?' on':'')}></div>`)}
+      </div>
+      ${err?html`<p class="pin-err">Incorrect PIN — try again</p>`:null}
+      <div class="pin-pad">
+        ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map((d,i)=>html`<button key=${i} class=${'pin-key'+(d===''?' ghost':'')} onClick=${()=>d!==''&&press(String(d))}>${d}</button>`)}
+      </div>
+      <button class="btn btn-ghost btn-full" style=${{marginTop:'-4px'}} onClick=${onCancel}>Cancel</button>
+    </div>
+  </div>`;
+}
+
+// ── PupilSelect ────────────────────────────────────────────────
+function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
+  const tasks = classTasks||loadTasks();
+  const title = classTasks?('📚 '+(className||'Class Tasks')):'📚 Choose your task';
+  return html`<div class="ps-screen">
+    <div class="ps-hdr">
+      <button class="ps-back" onClick=${onBack}>← Back</button>
+      <h1>${title}</h1>
+      <button class="ps-back" onClick=${onJoinClass}>${classTasks?'🔗 Switch':'🔗 Join Class'}</button>
+    </div>
+    ${tasks.length===0?html`<div class="empty" style=${{color:'rgba(255,255,255,.85)'}}><div class="empty-ico">😕</div><p>No tasks yet — ask your teacher!</p></div>`:
+    html`<div class="ps-grid">${tasks.map(t=>{
+      const s=SUBJECTS.find(x=>x.id===t.subject)||SUBJECTS[7];
+      return html`<button key=${t.id} class="ps-card" onClick=${()=>onSelect(t)}>
+        <div class="ps-ico">${s.emoji}</div>
+        <div class="ps-subj">${s.label}</div>
+        <div class="ps-name">${t.title}</div>
+        ${t.timerMins>0?html`<div style=${{fontSize:'.72rem',color:'#6366F1',fontWeight:800}}>⏱ ${t.timerMins} min</div>`:null}
+      </button>`;
+    })}</div>`}
+  </div>`;
+}
+
+// ── ClassJoin ──────────────────────────────────────────────────
+function ClassJoin({ db, onLoaded, onBack }) {
+  const [code,setCode] = useState('');
+  const [loading,setLoading] = useState(false);
+  const [err,setErr] = useState('');
+  const join=async()=>{
+    const c=code.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+    if(c.length<6){setErr('Please enter the full 6-character code');return;}
+    if(!db){setErr('Class sync needs the published version');return;}
+    setLoading(true);setErr('');
+    try{
+      const snap=await db.doc('classes/'+c).get();
+      if(!snap.exists){setErr('Code not found — check with your teacher');setLoading(false);return;}
+      const data=snap.data();
+      onLoaded(data.tasks||[],data.name||'Class Tasks',c);
+    }catch{setErr('Could not connect — please try again');setLoading(false);}
+  };
+  return html`<div class="ps-screen">
+    <div class="ps-hdr"><button class="ps-back" onClick=${onBack}>← Back</button><h1>🔗 Join Your Class</h1></div>
+    <div class="cj-box">
+      <p style=${{fontWeight:800,fontSize:'1.05rem'}}>Enter your class code:</p>
+      <input class="cj-code-input" value=${code} maxlength="6" placeholder="e.g. LION42" inputmode="text" autocomplete="off"
+        onInput=${e=>{setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''));setErr('');}}
+        onKeyDown=${e=>e.key==='Enter'&&join()}/>
+      ${err?html`<p class="cj-err">${err}</p>`:null}
+      <button class="btn btn-primary btn-full" onClick=${join} disabled=${loading}>${loading?'⏳ Joining…':'→ Join Class'}</button>
+    </div>
+    <p class="cj-hint">Your teacher will show you the 6-letter code on the board</p>
+  </div>`;
+}
+
+// ── Landing ────────────────────────────────────────────────────
+function Landing({ onTeacher, onPupil, onStickers }) {
+  const [showPin,setShowPin] = useState(false);
+  const settings = loadSettings();
+  const stickers = loadStickers();
+  return html`<div class="landing">
+    ${showPin?html`<${PinModal} pin=${settings.pin} onOk=${()=>{setShowPin(false);onTeacher();}} onCancel=${()=>setShowPin(false)}/>`:null}
+    <div class="landing-hero">
+      <div class="mascot">
+        <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="112" r="72" fill="#6366F1"/>
+          <circle cx="100" cy="110" r="62" fill="#818CF8"/>
+          <ellipse cx="44" cy="140" rx="28" ry="40" fill="#4F46E5" transform="rotate(-18,44,140)"/>
+          <ellipse cx="156" cy="140" rx="28" ry="40" fill="#4F46E5" transform="rotate(18,156,140)"/>
+          <circle cx="78" cy="100" r="22" fill="white"/><circle cx="122" cy="100" r="22" fill="white"/>
+          <circle cx="82" cy="100" r="13" fill="#1E1B4B"/><circle cx="126" cy="100" r="13" fill="#1E1B4B"/>
+          <circle cx="85" cy="96" r="4" fill="white"/><circle cx="129" cy="96" r="4" fill="white"/>
+          <polygon points="100,116 90,132 110,132" fill="#F59E0B"/>
+          <rect x="58" y="36" width="84" height="10" rx="3" fill="#1E1B4B"/>
+          <rect x="92" y="24" width="16" height="16" rx="2" fill="#1E1B4B"/>
+          <line x1="140" y1="40" x2="158" y2="62" stroke="#EAB308" stroke-width="3.5"/>
+          <circle cx="160" cy="66" r="6" fill="#EAB308"/>
+        </svg>
+      </div>
+      <h1 class="landing-title">🎯 Focus Time</h1>
+      <p class="landing-sub">Ready to learn something brilliant?</p>
+    </div>
+    <div class="mode-btns">
+      <button class="mode-btn" onClick=${()=>setShowPin(true)}>
+        <span class="m-icon">👩‍🏫</span>
+        <span class="m-text"><span class="m-label">I'm a Teacher</span><span class="m-sub">Create &amp; manage tasks</span></span>
+        <span class="m-arrow">›</span>
+      </button>
+      <button class="mode-btn" onClick=${onPupil}>
+        <span class="m-icon">🧑‍🎓</span>
+        <span class="m-text"><span class="m-label">I'm a Pupil</span>
+          <span class="m-sub">Start your task${stickers.length>0?html` <span class="stick-badge">⭐ ${stickers.length}</span>`:''}</span>
+        </span>
+        <span class="m-arrow">›</span>
+      </button>
+    </div>
+    <div class="landing-links">
+      <button class="landing-link" onClick=${onStickers}>⭐ My Stickers${stickers.length>0?' ('+stickers.length+')':''}</button>
+    </div>
+  </div>`;
+}
+
+// ── App ────────────────────────────────────────────────────────
+function App() {
+  const [screen,setScreen] = useState('landing');
+  const [activeTask,setActiveTask] = useState(null);
+  const [activeSettings,setActiveSettings] = useState(loadSettings);
+  const [db,setDb] = useState(null);
+  const [classTasks,setClassTasks] = useState(null);
+  const [className,setClassName] = useState('');
+
+  useEffect(()=>{
+    if(window.claude&&typeof window.claude.use==='function')
+      window.claude.use('db').then(d=>{if(d)setDb(d);}).catch(()=>{});
+  },[]);
+
+  const launch=(task,settings)=>{setActiveTask(task);setActiveSettings(settings);setScreen('pupil');};
+
+  if(screen==='stickers')    return html`<${StickerBook} onBack=${()=>setScreen('landing')}/>`;
+  if(screen==='boardtimer')  return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
+  if(screen==='teacher')     return html`<${TeacherMode} db=${db} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')}/>`;
+  if(screen==='classjoin')   return html`<${ClassJoin} db=${db} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen('select')}/>`;
+  if(screen==='select')      return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings(loadSettings());setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
+  if(screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
+  return html`<${Landing} onTeacher=${()=>setScreen('teacher')} onPupil=${()=>setScreen('select')} onStickers=${()=>setScreen('stickers')}/>`;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
+</script>
