@@ -61,6 +61,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .mode-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(0,0,0,.14);}
 .m-icon{font-size:2.4rem;width:52px;text-align:center;flex-shrink:0;}
 .m-photo{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.22);border:3px solid rgba(255,255,255,.6);}
+.m-photo-svg{width:64px;height:64px;object-fit:contain;flex-shrink:0;}
 .m-label{font-size:1.15rem;font-weight:900;color:#1E1B4B;}
 .m-sub{font-size:.88rem;font-weight:700;color:#6366F1;display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
 .m-arrow{margin-left:auto;color:#6366F1;font-size:1.1rem;}
@@ -1290,12 +1291,12 @@ function Landing({ onTeacher, onPupil, onStickers }) {
     </div>
     <div class="mode-btns">
       <button class="mode-btn" onClick=${()=>setShowPin(true)}>
-        <img class="m-photo" src="https://images.unsplash.com/photo-1758685847747-597ce085906e?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Teacher"/>
+        <img class="m-photo-svg" src="teacher.svg" alt="Teacher"/>
         <span class="m-text"><span class="m-label">I'm a Teacher</span><span class="m-sub">Create & manage tasks</span></span>
         <span class="m-arrow">›</span>
       </button>
       <button class="mode-btn" onClick=${onPupil}>
-        <img class="m-photo" src="https://images.unsplash.com/photo-1695131497815-931e70a5d8bc?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Pupil"/>
+        <img class="m-photo-svg" src="pupils.svg" alt="Pupil"/>
         <span class="m-text"><span class="m-label">I'm a Pupil</span>
           <span class="m-sub">Start your task${stickers.length>0?html` <span class="stick-badge">⭐ ${stickers.length}</span>`:''}</span>
         </span>
