@@ -47,7 +47,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 
 /* LANDING */
-.landing{min-height:100vh;background:linear-gradient(150deg,rgba(59,130,246,.92) 0%,rgba(99,102,241,.88) 45%,rgba(139,92,246,.92) 100%),url(bkgrnd.png) center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;gap:24px;position:relative;overflow:hidden;}
+.landing{min-height:100vh;background:linear-gradient(150deg,#3B82F6 0%,#6366F1 45%,#8B5CF6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;gap:24px;position:relative;overflow:hidden;}
 .landing::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 15%,rgba(255,255,255,.13) 0%,transparent 60%);pointer-events:none;}
 .landing-hero{text-align:center;animation:bounceIn .7s ease both;}
 .mascot{width:150px;height:150px;margin:0 auto 14px;animation:floaty 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.22));}
@@ -57,7 +57,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .mode-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:none;cursor:pointer;background:rgba(255,255,255,.96);box-shadow:0 8px 32px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;text-align:left;color:var(--text);}
 .mode-btn:active{transform:scale(.97);box-shadow:0 4px 16px rgba(0,0,0,.14);}
 .m-icon{font-size:2.4rem;width:52px;text-align:center;flex-shrink:0;}
-.m-photo{width:72px;height:72px;object-fit:contain;flex-shrink:0;filter:drop-shadow(0 3px 10px rgba(0,0,0,.25));}
+.m-photo{width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.22);border:3px solid rgba(255,255,255,.6);}
 .m-label{font-size:1.15rem;font-weight:900;color:#1E1B4B;}
 .m-sub{font-size:.88rem;font-weight:700;color:#6366F1;display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
 .m-arrow{margin-left:auto;color:#6366F1;font-size:1.1rem;}
@@ -1296,12 +1296,12 @@ function Landing({ onTeacher, onPupil, onStickers }) {
     </div>
     <div class="mode-btns">
       <button class="mode-btn" onClick=${()=>setShowPin(true)}>
-        <img class="m-photo" src="teacher.png" alt="Teacher"/>
+        <img class="m-photo" src="https://images.unsplash.com/photo-1758685847747-597ce085906e?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Teacher"/>
         <span class="m-text"><span class="m-label">I'm a Teacher</span><span class="m-sub">Create &amp; manage tasks</span></span>
         <span class="m-arrow">›</span>
       </button>
       <button class="mode-btn" onClick=${onPupil}>
-        <img class="m-photo" src="pupil.png" alt="Pupil"/>
+        <img class="m-photo" src="https://images.unsplash.com/photo-1695131497815-931e70a5d8bc?w=120&h=120&auto=format&fit=crop&crop=faces&q=80" alt="Pupil"/>
         <span class="m-text"><span class="m-label">I'm a Pupil</span>
           <span class="m-sub">Start your task${stickers.length>0?html` <span class="stick-badge">⭐ ${stickers.length}</span>`:''}</span>
         </span>
