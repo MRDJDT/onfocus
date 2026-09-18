@@ -579,14 +579,15 @@ function useNoise() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = ctx.createAnalyser();
-      analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.82;
+      analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.88;
       ctx.createMediaStreamSource(stream).connect(analyser);
       streamRef.current = stream; ctxRef.current = ctx; setPerm('granted');
       const buf = new Uint8Array(analyser.frequencyBinCount);
       const tick = () => {
         analyser.getByteFrequencyData(buf);
         const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
-        setLevel(Math.min(100, Math.round(rms * 3.2)));
+        const noise = Math.max(0, rms - 14); // ignore background hiss below threshold
+        setLevel(Math.min(100, Math.round(noise * 2.8)));
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
