@@ -367,6 +367,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 const { useState, useEffect, useRef, useCallback } = React;
 const html = htm.bind(React.createElement);
@@ -1053,6 +1054,28 @@ function TaskEditor({ init, onSave, onCancel }) {
   </div>`;
 }
 
+// ── QR Modal ───────────────────────────────────────────────────
+function QRModal({ url, onClose }) {
+  const [dataUrl, setDataUrl] = useState('');
+  useEffect(()=>{
+    if(typeof QRCode==='undefined') return;
+    QRCode.toDataURL(url,{width:260,margin:2,color:{dark:'#1E1B4B',light:'#ffffff'}})
+      .then(setDataUrl).catch(()=>{});
+  },[url]);
+  return html`<div class="overlay" onClick=${onClose}>
+    <div class="pin-box" onClick=${e=>e.stopPropagation()} style=${{maxWidth:'300px',gap:'14px',textAlign:'center'}}>
+      <div class="pin-title">📱 Pupil QR Code</div>
+      <p style=${{fontSize:'.85rem',fontWeight:700,color:'var(--faint)',margin:'-6px 0 0'}}>Pupils scan to join instantly</p>
+      ${dataUrl
+        ? html`<img src=${dataUrl} style=${{width:'220px',height:'220px',borderRadius:'12px',display:'block',margin:'0 auto'}} alt="QR Code"/>`
+        : html`<div style=${{width:'220px',height:'220px',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--faint)',margin:'0 auto'}}>Generating…</div>`
+      }
+      <p style=${{fontSize:'.78rem',fontWeight:800,color:'var(--muted)',letterSpacing:'.02em',wordBreak:'break-all'}}>${url}</p>
+      <button class="btn btn-primary" style=${{width:'100%'}} onClick=${onClose}>Close</button>
+    </div>
+  </div>`;
+}
+
 // ── TeacherMode ────────────────────────────────────────────────
 function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
   const [tasks,setTasks] = useState(loadTasks);
@@ -1060,6 +1083,7 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
   const [settings,setSettings] = useState(loadSettings);
   const [showSettings,setShowSettings] = useState(false);
   const [showLive,setShowLive] = useState(false);
+  const [showQR,setShowQR] = useState(false);
   const [publishState,setPublishState] = useState('idle');
   const [helpCount,setHelpCount] = useState(0);
   const [checkins,setCheckins] = useState({happy:0,ok:0,unsure:0});
@@ -1098,10 +1122,12 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
   if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
 
   return html`<div class="t-screen">
+    ${showQR?html`<${QRModal} url="https://onfocus.edapp.uk" onClose=${()=>setShowQR(false)}/>`:null}
     <div class="ph">
       <button class="back" onClick=${onExit}>← Home</button>
       <h1>👩‍🏫 Teacher Dashboard</h1>
       <button class="btn btn-secondary" style=${{padding:'8px 13px',fontSize:'.85rem',minHeight:'38px',gap:'5px'}} onClick=${onBoardTimer}>⏱ Board Timer</button>
+      <button class="icon-btn" title="Pupil QR Code" style=${{fontSize:'1.2rem'}} onClick=${()=>setShowQR(s=>!s)}>📱</button>
       <button class="icon-btn" style=${{fontSize:'1.1rem',position:'relative'}} onClick=${()=>setShowLive(s=>!s)}>
         📡${helpCount>0?html`<span class="help-badge">${helpCount}</span>`:null}
       </button>
