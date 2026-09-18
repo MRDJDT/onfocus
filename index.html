@@ -361,6 +361,31 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
   .pu-title{font-size:1rem;}
   .timer-label{display:none;}
 }
+/* TEACHER LOGIN */
+.tlogin{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(150deg,#3B82F6 0%,#6366F1 45%,#8B5CF6 100%);padding:20px;}
+.tlogin-box{background:var(--surface);border-radius:24px;padding:36px 28px;width:100%;max-width:380px;box-shadow:var(--sh-lg);display:flex;flex-direction:column;gap:18px;}
+.tlogin-title{font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--text);text-align:center;}
+.tlogin-sub{font-size:.88rem;font-weight:700;color:var(--faint);text-align:center;margin-top:-8px;}
+.tlogin-tabs{display:flex;background:var(--bg);border-radius:10px;padding:4px;gap:4px;}
+.tlogin-tab{flex:1;padding:9px;border:none;border-radius:8px;background:transparent;color:var(--muted);font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
+.tlogin-tab.active{background:var(--surface);color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,.1);}
+.tlogin-field{display:flex;flex-direction:column;gap:6px;}
+.tlogin-field label{font-size:.74rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+.tlogin-field input{padding:12px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 1rem 'Nunito',sans-serif;outline:none;transition:border .15s;width:100%;}
+.tlogin-field input:focus{border-color:var(--blue);}
+.tlogin-err{color:var(--red);font-size:.85rem;font-weight:800;text-align:center;padding:8px 12px;background:rgba(239,68,68,.08);border-radius:10px;}
+.tlogin-note{font-size:.74rem;color:var(--faint);text-align:center;font-weight:700;line-height:1.5;}
+/* CLASS MANAGEMENT */
+.class-list{display:flex;flex-direction:column;gap:8px;}
+.class-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;}
+.class-item.active{border-color:var(--blue);background:var(--blue-l);}
+.class-item-name{font-weight:800;flex:1;font-size:.95rem;}
+.class-item-code{font-size:.74rem;font-weight:800;color:var(--muted);background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:.08em;}
+.class-item-del{background:none;border:none;color:var(--faint);cursor:pointer;padding:4px 6px;font-size:.9rem;border-radius:6px;line-height:1;transition:all .15s;}
+.class-item-del:hover{color:var(--red);background:rgba(239,68,68,.1);}
+.new-class-row{display:flex;gap:8px;}
+.new-class-row input{flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 .9rem 'Nunito',sans-serif;outline:none;}
+.new-class-row input:focus{border-color:var(--blue);}
 </style>
 
 <div id="root"></div>
@@ -368,6 +393,9 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
 const { useState, useEffect, useRef, useCallback } = React;
 const html = htm.bind(React.createElement);
@@ -418,8 +446,42 @@ const STICKERS = [
   { id:'crown',   emoji:'👑', name:'Crown' },
 ];
 
+// ── Firebase ────────────────────────────────────────────────────
+// Paste your Firebase config here — get it from console.firebase.google.com
+// Enable: Authentication > Sign-in method > Email/Password, and Firestore Database
+const FIREBASE_CONFIG = null; // e.g. { apiKey:'...', authDomain:'...', projectId:'...', ... }
+
+let _fbAuth = null, _fbDb = null;
+(function(){
+  if (!FIREBASE_CONFIG || typeof firebase === 'undefined') return;
+  try {
+    const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    _fbAuth = firebase.auth(app);
+    _fbDb   = firebase.firestore(app);
+  } catch(e){ console.warn('Firebase:', e); }
+})();
+
 // ── storage ────────────────────────────────────────────────────
 const TASK_KEY = 'ft_tasks_v2', SET_KEY = 'ft_settings_v2', STICK_KEY = 'ft_stickers_v1';
+const CLASS_KEY = 'ft_classes_v1', ACTIVE_CLS_KEY = 'ft_active_class';
+
+const loadClasses = () => {
+  try {
+    const c = JSON.parse(localStorage.getItem(CLASS_KEY));
+    if (c && c.length) return c;
+    // migrate legacy single class from settings
+    const s = JSON.parse(localStorage.getItem(SET_KEY));
+    const code = s?.classCode || genClassCode();
+    const cls = [{ id: genId(), name: s?.className || 'My Class', code }];
+    localStorage.setItem(CLASS_KEY, JSON.stringify(cls));
+    return cls;
+  } catch { return [{ id: genId(), name: 'My Class', code: genClassCode() }]; }
+};
+const saveClasses = c => { try { localStorage.setItem(CLASS_KEY, JSON.stringify(c)); } catch {} };
+const loadActiveClassId = () => { try { return localStorage.getItem(ACTIVE_CLS_KEY) || ''; } catch { return ''; } };
+const saveActiveClassId = id => { try { localStorage.setItem(ACTIVE_CLS_KEY, id); } catch {} };
+const loadTasksForClass = id => { try { return JSON.parse(localStorage.getItem('ft_cls_tasks_'+id)) || []; } catch { return []; } };
+const saveTasksForClass = (id, t) => { try { localStorage.setItem('ft_cls_tasks_'+id, JSON.stringify(t)); } catch {} };
 
 const defTasks = () => [{
   id: genId(), subject:'english', title:'Descriptive Writing', date: todayISO(), timerMins: 0,
@@ -1054,6 +1116,74 @@ function TaskEditor({ init, onSave, onCancel }) {
   </div>`;
 }
 
+// ── TeacherLogin ───────────────────────────────────────────────
+function TeacherLogin({ onLoggedIn, onBack }) {
+  const [tab, setTab] = useState('signin');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [pass, setPass] = useState('');
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const errMsg = code => ({
+    'auth/email-already-in-use': 'That email already has an account — try signing in',
+    'auth/wrong-password': 'Wrong password',
+    'auth/invalid-credential': 'Wrong email or password',
+    'auth/user-not-found': 'No account found — try creating one',
+    'auth/invalid-email': 'Invalid email address',
+    'auth/weak-password': 'Password must be at least 6 characters',
+  }[code] || 'Something went wrong — please try again');
+
+  const submit = async () => {
+    if (!_fbAuth) { setErr('Firebase not configured yet — see the setup note below'); return; }
+    if (!email.trim() || !pass.trim()) { setErr('Please enter your email and password'); return; }
+    if (tab === 'register' && !name.trim()) { setErr('Please enter your name'); return; }
+    setBusy(true); setErr('');
+    try {
+      let cred;
+      if (tab === 'register') {
+        cred = await _fbAuth.createUserWithEmailAndPassword(email.trim(), pass);
+        await cred.user.updateProfile({ displayName: name.trim() });
+      } else {
+        cred = await _fbAuth.signInWithEmailAndPassword(email.trim(), pass);
+      }
+      onLoggedIn(cred.user);
+    } catch(e) { setErr(errMsg(e.code)); }
+    finally { setBusy(false); }
+  };
+
+  const switchTab = t => { setTab(t); setErr(''); };
+
+  return html`<div class="tlogin">
+    <div class="tlogin-box">
+      <div class="tlogin-title">🔐 Teacher Login</div>
+      <p class="tlogin-sub">Sign in to manage your classes</p>
+      <div class="tlogin-tabs">
+        <button class=${'tlogin-tab'+(tab==='signin'?' active':'')} onClick=${()=>switchTab('signin')}>Sign In</button>
+        <button class=${'tlogin-tab'+(tab==='register'?' active':'')} onClick=${()=>switchTab('register')}>Create Account</button>
+      </div>
+      ${tab==='register'?html`<div class="tlogin-field">
+        <label>Your Name</label>
+        <input type="text" placeholder="e.g. Mrs Jones" value=${name} onInput=${e=>setName(e.target.value)}/>
+      </div>`:null}
+      <div class="tlogin-field">
+        <label>Email</label>
+        <input type="email" placeholder="teacher@school.co.uk" value=${email} onInput=${e=>setEmail(e.target.value)}/>
+      </div>
+      <div class="tlogin-field">
+        <label>Password</label>
+        <input type="password" placeholder="••••••••" value=${pass} onInput=${e=>setPass(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&submit()}/>
+      </div>
+      ${err?html`<div class="tlogin-err">${err}</div>`:null}
+      <button class="btn btn-primary" onClick=${submit} disabled=${busy}>
+        ${busy?'⏳ Please wait…':tab==='register'?'✅ Create Account':'🔓 Sign In'}
+      </button>
+      ${!FIREBASE_CONFIG?html`<p class="tlogin-note">⚠️ Firebase not set up yet. Add your Firebase config to <code>FIREBASE_CONFIG</code> in index.html to enable teacher accounts, live help signals, and class sync.</p>`:null}
+      <button class="btn btn-ghost" onClick=${onBack}>← Back to Home</button>
+    </div>
+  </div>`;
+}
+
 // ── QR Modal ───────────────────────────────────────────────────
 function QRModal({ url, onClose }) {
   const [dataUrl, setDataUrl] = useState('');
@@ -1077,65 +1207,133 @@ function QRModal({ url, onClose }) {
 }
 
 // ── TeacherMode ────────────────────────────────────────────────
-function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
-  const [tasks,setTasks] = useState(loadTasks);
-  const [editing,setEditing] = useState(null);
-  const [settings,setSettings] = useState(loadSettings);
-  const [showSettings,setShowSettings] = useState(false);
-  const [showLive,setShowLive] = useState(false);
-  const [showQR,setShowQR] = useState(false);
-  const [publishState,setPublishState] = useState('idle');
-  const [helpCount,setHelpCount] = useState(0);
-  const [checkins,setCheckins] = useState({happy:0,ok:0,unsure:0});
+function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut }) {
+  const [classes, setClasses]       = useState(loadClasses);
+  const [activeClsId, setActiveClsId] = useState(() => {
+    const saved = loadActiveClassId();
+    const all = loadClasses();
+    return (saved && all.find(c=>c.id===saved)) ? saved : (all[0]?.id||'');
+  });
+  const activeCls = classes.find(c=>c.id===activeClsId) || classes[0] || {id:'',name:'',code:''};
+  const [tasks, setTasks]           = useState(()=>loadTasksForClass(activeCls.id));
+  const [editing, setEditing]       = useState(null);
+  const [settings, setSettings]     = useState(loadSettings);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showLive, setShowLive]     = useState(false);
+  const [showQR, setShowQR]         = useState(false);
+  const [showClasses, setShowClasses] = useState(false);
+  const [newClassName, setNewClassName] = useState('');
+  const [publishState, setPublishState] = useState('idle');
+  const [helpCount, setHelpCount]   = useState(0);
+  const [checkins, setCheckins]     = useState({happy:0,ok:0,unsure:0});
 
+  // reload tasks when active class changes
   useEffect(()=>{
-    if (!db||!settings.classCode) return;
-    const u1 = db.doc('helpSignals/'+settings.classCode).onSnapshot(snap=>{ if(snap.exists) setHelpCount(snap.data().count||0); },()=>{});
-    const u2 = db.doc('checkins/'+settings.classCode).onSnapshot(snap=>{ if(snap.exists) setCheckins(d=>({...d,...snap.data()})); },()=>{});
+    setTasks(loadTasksForClass(activeCls.id));
+    setHelpCount(0); setCheckins({happy:0,ok:0,unsure:0});
+  },[activeCls.id]);
+
+  // live signals subscription
+  useEffect(()=>{
+    const code = activeCls.code;
+    if (!db || !code) return;
+    const u1 = db.doc('helpSignals/'+code).onSnapshot(snap=>{ if(snap.exists) setHelpCount(snap.data().count||0); },()=>{});
+    const u2 = db.doc('checkins/'+code).onSnapshot(snap=>{ if(snap.exists) setCheckins(d=>({...d,...snap.data()})); },()=>{});
     return ()=>{ u1(); u2(); };
-  },[db, settings.classCode]);
+  },[db, activeCls.code]);
 
-  const saveTask=t=>{const next=tasks.find(x=>x.id===t.id)?tasks.map(x=>x.id===t.id?t:x):[...tasks,t];setTasks(next);saveTasks(next);setEditing(null);};
-  const delTask=id=>{const next=tasks.filter(t=>t.id!==id);setTasks(next);saveTasks(next);};
-  const updSet=patch=>{const s={...settings,...patch};setSettings(s);saveSettings(s);};
+  const saveTask = t => {
+    const next = tasks.find(x=>x.id===t.id) ? tasks.map(x=>x.id===t.id?t:x) : [...tasks,t];
+    setTasks(next); saveTasksForClass(activeCls.id, next); setEditing(null);
+  };
+  const delTask = id => {
+    const next = tasks.filter(t=>t.id!==id);
+    setTasks(next); saveTasksForClass(activeCls.id, next);
+  };
+  const updSet = patch => { const s={...settings,...patch}; setSettings(s); saveSettings(s); };
 
-  const publishToClass=async()=>{
-    if(!db){setPublishState('err');setTimeout(()=>setPublishState('idle'),3000);return;}
+  const switchClass = id => {
+    saveActiveClassId(id); setActiveClsId(id);
+    setShowClasses(false); setPublishState('idle');
+  };
+  const createClass = () => {
+    if (!newClassName.trim()) return;
+    const cls = { id: genId(), name: newClassName.trim(), code: genClassCode() };
+    const next = [...classes, cls]; setClasses(next); saveClasses(next);
+    setNewClassName(''); switchClass(cls.id);
+  };
+  const deleteClass = (e, id) => {
+    e.stopPropagation();
+    if (classes.length <= 1) return;
+    const next = classes.filter(c=>c.id!==id); setClasses(next); saveClasses(next);
+    if (activeClsId === id) switchClass(next[0].id);
+  };
+
+  const publishToClass = async () => {
+    if (!db) { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); return; }
     setPublishState('loading');
     try {
-      await db.doc('classes/'+settings.classCode).set({name:settings.className||'My Class',tasks,updatedAt:Date.now()});
+      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks,updatedAt:Date.now()});
       setPublishState('ok'); setTimeout(()=>setPublishState('idle'),3500);
     } catch { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); }
   };
 
-  const clearHelp=async()=>{
+  const clearHelp = async () => {
     setHelpCount(0);
-    if(db&&settings.classCode) try{await db.doc('helpSignals/'+settings.classCode).set({count:0,updatedAt:Date.now()});}catch{}
+    if (db && activeCls.code) try { await db.doc('helpSignals/'+activeCls.code).set({count:0,updatedAt:Date.now()}); } catch {}
   };
-  const clearCheckins=async()=>{
+  const clearCheckins = async () => {
     setCheckins({happy:0,ok:0,unsure:0});
-    if(db&&settings.classCode) try{await db.doc('checkins/'+settings.classCode).set({happy:0,ok:0,unsure:0,updatedAt:Date.now()});}catch{}
+    if (db && activeCls.code) try { await db.doc('checkins/'+activeCls.code).set({happy:0,ok:0,unsure:0,updatedAt:Date.now()}); } catch {}
   };
 
-  const totalCheckins=(checkins.happy||0)+(checkins.ok||0)+(checkins.unsure||0);
+  const totalCheckins = (checkins.happy||0)+(checkins.ok||0)+(checkins.unsure||0);
+  const qrUrl = `https://onfocus.edapp.uk?class=${activeCls.code}`;
 
   if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
 
   return html`<div class="t-screen">
-    ${showQR?html`<${QRModal} url="https://onfocus.edapp.uk" onClose=${()=>setShowQR(false)}/>`:null}
+    ${showQR?html`<${QRModal} url=${qrUrl} onClose=${()=>setShowQR(false)}/>`:null}
     <div class="ph">
       <button class="back" onClick=${onExit}>← Home</button>
-      <h1>👩‍🏫 Teacher Dashboard</h1>
+      <h1>👩‍🏫 ${teacher?.displayName||'Teacher'}</h1>
       <button class="btn btn-secondary" style=${{padding:'8px 13px',fontSize:'.85rem',minHeight:'38px',gap:'5px'}} onClick=${onBoardTimer}>⏱ Board Timer</button>
       <button class="icon-btn" title="Pupil QR Code" style=${{fontSize:'1.2rem'}} onClick=${()=>setShowQR(s=>!s)}>📱</button>
       <button class="icon-btn" style=${{fontSize:'1.1rem',position:'relative'}} onClick=${()=>setShowLive(s=>!s)}>
         📡${helpCount>0?html`<span class="help-badge">${helpCount}</span>`:null}
       </button>
       <button class="icon-btn" style=${{fontSize:'1.3rem'}} onClick=${()=>setShowSettings(s=>!s)}>⚙️</button>
+      ${onSignOut?html`<button class="icon-btn" title="Sign out" style=${{fontSize:'1.1rem'}} onClick=${onSignOut}>🚪</button>`:null}
     </div>
+
     <div class="t-body">
+      <!-- CLASS SELECTOR -->
+      <div class="settings-panel" style=${{marginBottom:'4px'}}>
+        <div style=${{display:'flex',alignItems:'center',gap:10}}>
+          <h3 style=${{margin:0,flex:1}}>📚 ${activeCls.name}</h3>
+          <span class="cs-code" style=${{fontSize:'.78rem'}}>${activeCls.code}</span>
+          <button class="btn btn-ghost" style=${{padding:'5px 12px',fontSize:'.82rem',minHeight:'34px'}} onClick=${()=>setShowClasses(s=>!s)}>
+            ${showClasses?'▲ Hide':'▼ My Classes'}
+          </button>
+        </div>
+        ${showClasses?html`<div style=${{marginTop:'12px'}}>
+          <div class="class-list">
+            ${classes.map(c=>html`<div key=${c.id} class=${'class-item'+(c.id===activeClsId?' active':'')} onClick=${()=>switchClass(c.id)}>
+              <span class="class-item-name">${c.name}</span>
+              <span class="class-item-code">${c.code}</span>
+              ${classes.length>1?html`<button class="class-item-del" onClick=${e=>deleteClass(e,c.id)} title="Delete class">🗑️</button>`:null}
+            </div>`)}
+          </div>
+          <div class="new-class-row" style=${{marginTop:'10px'}}>
+            <input type="text" placeholder="New class name…" value=${newClassName} onInput=${e=>setNewClassName(e.target.value)} onKeyDown=${e=>e.key==='Enter'&&createClass()}/>
+            <button class="btn btn-primary" style=${{padding:'8px 14px',minHeight:'38px'}} onClick=${createClass}>+ Add</button>
+          </div>
+        </div>`:null}
+      </div>
+
+      <!-- LIVE SIGNALS -->
       ${showLive?html`<div class="settings-panel">
-        <h3>📡 Live Class</h3>
+        <h3>📡 Live — ${activeCls.name}</h3>
         <div class="live-row">
           <span>🙋 Help requests:</span>
           <strong style=${{fontSize:'1.5rem',color:helpCount>0?'var(--red)':'var(--text)'}}>${helpCount}</strong>
@@ -1150,8 +1348,10 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
             ${totalCheckins>0?html`<button class="btn btn-ghost" style=${{padding:'4px 10px',fontSize:'.78rem',minHeight:'32px'}} onClick=${clearCheckins}>Clear</button>`:null}
           </div>
         </div>
-        ${!db?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700}}>Live data requires the published version</p>`:null}
+        ${!db?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700}}>⚠️ Live signals need Firebase configured</p>`:null}
       </div>`:null}
+
+      <!-- SETTINGS -->
       ${showSettings?html`<div class="settings-panel">
         <h3>🔧 Noise Meter</h3>
         <div class="srow">
@@ -1162,34 +1362,22 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
           <label>Alert level: ${settings.alertAt}%</label>
           <input type="range" min="30" max="95" value=${settings.alertAt} onInput=${e=>updSet({alertAt:+e.target.value})}/>
         </div>
-        <div class="srow">
-          <label>Teacher PIN (4 digits)</label>
-          <input type="text" value=${settings.pin} maxlength="4" pattern="[0-9]*" inputmode="numeric" onInput=${e=>{if(/^\d{0,4}$/.test(e.target.value))updSet({pin:e.target.value});}}/>
-        </div>
         <hr class="cs-divider"/>
-        <h3>📡 Class Sync</h3>
-        <div class="srow">
-          <label>Class Name</label>
-          <input type="text" value=${settings.className||'My Class'} style=${{width:'200px'}} onInput=${e=>updSet({className:e.target.value})}/>
-        </div>
-        <div class="srow">
-          <label>Class Code — share this with your pupils</label>
-          <div class="cs-code-box">
-            <span class="cs-code">${settings.classCode||'------'}</span>
-            <button class="icon-btn" title="Generate new code" onClick=${()=>updSet({classCode:genClassCode()})}>🔄</button>
-          </div>
-        </div>
-        ${publishState==='ok'?html`<div class="cs-ok">✅ Tasks published to class!</div>`:
-          publishState==='err'?html`<div class="cs-err">❌ ${db?'Publish failed — try again':'Class sync needs the published version'}</div>`:
+        <h3>📡 Publish to Class</h3>
+        <p style=${{fontSize:'.82rem',color:'var(--faint)',fontWeight:700,margin:'-4px 0 8px'}}>Pupils join with code: <strong style=${{color:'var(--text)'}}>${activeCls.code}</strong></p>
+        ${publishState==='ok'?html`<div class="cs-ok">✅ Tasks published to ${activeCls.name}!</div>`:
+          publishState==='err'?html`<div class="cs-err">❌ ${db?'Publish failed — try again':'Firebase needed for class sync'}</div>`:
           html`<button class="btn btn-primary" onClick=${publishToClass} disabled=${publishState==='loading'}>
             ${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}
           </button>`}
       </div>`:null}
+
+      <!-- TASKS -->
       <div class="tasks-hdr">
-        <h2>My Tasks (${tasks.length})</h2>
+        <h2>${activeCls.name} Tasks (${tasks.length})</h2>
         <button class="btn btn-primary" onClick=${()=>setEditing('new')}>+ Create Task</button>
       </div>
-      ${tasks.length===0?html`<div class="empty"><div class="empty-ico">📝</div><p class="empty-txt">No tasks yet — create your first one!</p></div>`:
+      ${tasks.length===0?html`<div class="empty"><div class="empty-ico">📝</div><p class="empty-txt">No tasks for ${activeCls.name} yet — create your first one!</p></div>`:
       html`<div class="task-grid">${tasks.map(task=>{
         const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
         return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
@@ -1210,7 +1398,7 @@ function TeacherMode({ db, onLaunch, onBoardTimer, onExit }) {
               ${(task.vocab||[]).length>0?html`<span>📖 ${task.vocab.length} word${task.vocab.length!==1?'s':''}</span>`:null}
             </div>
           </div>
-          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${()=>onLaunch(task,settings)}>▶ Launch for Class</button></div>
+          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${()=>onLaunch(task,{...settings,classCode:activeCls.code,className:activeCls.name})}>▶ Launch for Class</button></div>
         </div>`;
       })}</div>`}
     </div>
@@ -1298,13 +1486,14 @@ function ClassJoin({ db, onLoaded, onBack }) {
 }
 
 // ── Landing ────────────────────────────────────────────────────
-function Landing({ onTeacher, onPupil, onStickers }) {
+function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
   const [showPin,setShowPin] = useState(false);
   const settings = loadSettings();
   const stickers = loadStickers();
   const now = new Date();
   const dayName = now.toLocaleDateString('en-GB',{weekday:'long'});
   const fullDate = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  const handleTeacher = () => useFirebaseAuth ? onTeacher() : setShowPin(true);
   return html`<div class="landing">
     ${showPin?html`<${PinModal} pin=${settings.pin} onOk=${()=>{setShowPin(false);onTeacher();}} onCancel=${()=>setShowPin(false)}/>`:null}
     <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
@@ -1316,7 +1505,7 @@ function Landing({ onTeacher, onPupil, onStickers }) {
       <p class="landing-sub">Ready to learn something brilliant?</p>
     </div>
     <div class="mode-btns">
-      <button class="mode-btn" onClick=${()=>setShowPin(true)}>
+      <button class="mode-btn" onClick=${handleTeacher}>
         <img class="m-photo-svg" src="teacher.svg" alt="Teacher"/>
         <span class="m-text"><span class="m-label">I'm a Teacher</span><span class="m-sub">Create & manage tasks</span></span>
         <span class="m-arrow">›</span>
@@ -1337,27 +1526,50 @@ function Landing({ onTeacher, onPupil, onStickers }) {
 
 // ── App ────────────────────────────────────────────────────────
 function App() {
-  const [screen,setScreen] = useState('landing');
-  const [activeTask,setActiveTask] = useState(null);
+  const [screen,setScreen]           = useState('landing');
+  const [activeTask,setActiveTask]   = useState(null);
   const [activeSettings,setActiveSettings] = useState(loadSettings);
-  const [db,setDb] = useState(null);
-  const [classTasks,setClassTasks] = useState(null);
-  const [className,setClassName] = useState('');
+  const [db,setDb]                   = useState(null);
+  const [classTasks,setClassTasks]   = useState(null);
+  const [className,setClassName]     = useState('');
+  const [teacher,setTeacher]         = useState(null);   // Firebase User | null
+  const [authReady,setAuthReady]     = useState(!_fbAuth); // true when no firebase
 
+  // Init db — prefer Firebase if configured, fall back to claude.ai Artifact db
   useEffect(()=>{
-    if(window.claude&&typeof window.claude.use==='function')
+    if (_fbDb) { setDb(_fbDb); return; }
+    if (window.claude && typeof window.claude.use==='function')
       window.claude.use('db').then(d=>{if(d)setDb(d);}).catch(()=>{});
   },[]);
 
-  const launch=(task,settings)=>{setActiveTask(task);setActiveSettings(settings);setScreen('pupil');};
+  // Listen to Firebase auth state
+  useEffect(()=>{
+    if (!_fbAuth) return;
+    const unsub = _fbAuth.onAuthStateChanged(user=>{
+      setTeacher(user); setAuthReady(true);
+      // If signed in and on landing, stay; if signed out while in teacher, go home
+      if (!user && screen==='teacher') setScreen('landing');
+    });
+    return unsub;
+  },[]);
 
-  if(screen==='stickers')    return html`<${StickerBook} onBack=${()=>setScreen('landing')}/>`;
-  if(screen==='boardtimer')  return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
-  if(screen==='teacher')     return html`<${TeacherMode} db=${db} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')}/>`;
-  if(screen==='classjoin')   return html`<${ClassJoin} db=${db} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen('select')}/>`;
-  if(screen==='select')      return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings(loadSettings());setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
-  if(screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
-  return html`<${Landing} onTeacher=${()=>setScreen('teacher')} onPupil=${()=>setScreen('select')} onStickers=${()=>setScreen('stickers')}/>`;
+  const launch=(task,settings)=>{setActiveTask(task);setActiveSettings(settings);setScreen('pupil');};
+  const signOut = () => { if(_fbAuth) _fbAuth.signOut(); setTeacher(null); setScreen('landing'); };
+  const goTeacher = () => {
+    if (_fbAuth && !teacher) { setScreen('teacherlogin'); }
+    else { setScreen('teacher'); }
+  };
+
+  if (!authReady) return html`<div style=${{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',color:'var(--muted)',font:'700 1.1rem Nunito,sans-serif'}}>Loading…</div>`;
+
+  if (screen==='stickers')     return html`<${StickerBook} onBack=${()=>setScreen('landing')}/>`;
+  if (screen==='boardtimer')   return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
+  if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
+  if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
+  if (screen==='classjoin')    return html`<${ClassJoin} db=${db} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen('select')}/>`;
+  if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings(loadSettings());setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
+  if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
+  return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('select')} onStickers=${()=>setScreen('stickers')} useFirebaseAuth=${!!_fbAuth}/>`;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
