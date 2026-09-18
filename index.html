@@ -586,8 +586,8 @@ function useNoise() {
       const tick = () => {
         analyser.getByteFrequencyData(buf);
         const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
-        const noise = Math.max(0, rms - 14); // ignore background hiss below threshold
-        setLevel(Math.min(100, Math.round(noise * 2.8)));
+        const noise = Math.max(0, rms - 26); // ignore background hiss below threshold
+        setLevel(Math.min(100, Math.round(noise * 2.2)));
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
