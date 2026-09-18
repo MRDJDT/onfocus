@@ -51,11 +51,11 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .landing-date{text-align:right;color:rgba(255,255,255,.92);}
 .landing-date-day{font-family:'Fredoka One',cursive;font-size:1.05rem;letter-spacing:.04em;}
 .landing-date-full{font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);margin-top:1px;}
-.landing-topbar{display:flex;align-items:flex-start;justify-content:space-between;width:100%;max-width:440px;}
+.landing-topbar{display:flex;flex-direction:column;align-items:flex-end;width:100%;max-width:440px;gap:2px;}
 .landing::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 15%,rgba(255,255,255,.13) 0%,transparent 60%);pointer-events:none;}
 .landing-hero{text-align:center;animation:bounceIn .7s ease both;}
 .mascot{width:150px;height:150px;margin:0 auto 14px;animation:floaty 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.22));}
-.landing-title{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,8vw,3.8rem);color:#fff;letter-spacing:.02em;text-shadow:0 3px 12px rgba(0,0,0,.2);}
+.landing-title{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,8vw,3.8rem);color:#fff;letter-spacing:.02em;text-shadow:0 3px 12px rgba(0,0,0,.2);text-align:right;}
 .landing-sub{font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.85);margin-top:4px;}
 .mode-btns{display:flex;flex-direction:column;gap:14px;width:100%;max-width:440px;animation:slideUp .6s .25s ease both;}
 .mode-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:none;cursor:pointer;background:rgba(255,255,255,.96);box-shadow:0 8px 32px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;text-align:left;color:var(--text);}
