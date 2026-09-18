@@ -189,6 +189,12 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .cj-code-input:focus{border-color:#fff;}
 .cj-hint{color:rgba(255,255,255,.7);font-size:.88rem;font-weight:700;text-align:center;}
 .cj-err{color:#FCA5A5;font-size:.9rem;font-weight:800;}
+.cj-qr-section{text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.cj-qr-icon{font-size:2.8rem;line-height:1;}
+.cj-qr-text{font-size:.95rem;font-weight:700;color:rgba(255,255,255,.9);margin:0;}
+.cj-divider{width:100%;display:flex;align-items:center;gap:10px;color:rgba(255,255,255,.6);font-size:.82rem;font-weight:700;}
+.cj-divider::before,.cj-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.3);}
+.cj-divider span{white-space:nowrap;}
 
 /* PUPIL ACTIVE */
 .pu-screen{min-height:100vh;display:flex;flex-direction:column;background:var(--bg);}
@@ -1463,14 +1469,14 @@ function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
 }
 
 // ── ClassJoin ──────────────────────────────────────────────────
-function ClassJoin({ db, onLoaded, onBack }) {
-  const [code,setCode] = useState('');
+function ClassJoin({ db, initialCode, onLoaded, onBack }) {
+  const [code,setCode] = useState(()=>(initialCode||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6));
   const [loading,setLoading] = useState(false);
   const [err,setErr] = useState('');
-  const join=async()=>{
-    const c=code.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  const join=async(overrideCode)=>{
+    const c=(overrideCode||code).toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
     if(c.length<6){setErr('Please enter the full 6-character code');return;}
-    if(!db){setErr('Class sync needs the published version');return;}
+    if(!db){setErr('Class sync is not available — please try again');return;}
     setLoading(true);setErr('');
     try{
       const snap=await db.doc('classes/'+c).get();
@@ -1479,17 +1485,25 @@ function ClassJoin({ db, onLoaded, onBack }) {
       onLoaded(data.tasks||[],data.name||'Class Tasks',c);
     }catch{setErr('Could not connect — please try again');setLoading(false);}
   };
+  // Auto-join when arriving via QR code URL
+  useEffect(()=>{
+    if(initialCode&&initialCode.length===6&&db) join(initialCode);
+  },[db]);
   return html`<div class="ps-screen">
     <div class="ps-hdr"><button class="ps-back" onClick=${onBack}>← Back</button><h1>🔗 Join Your Class</h1></div>
     <div class="cj-box">
-      <p style=${{fontWeight:800,fontSize:'1.05rem'}}>Enter your class code:</p>
+      <div class="cj-qr-section">
+        <div class="cj-qr-icon">📷</div>
+        <p class="cj-qr-text">Scan the QR code your teacher shows you with your phone camera</p>
+        <div class="cj-divider"><span>or enter the code</span></div>
+      </div>
       <input class="cj-code-input" value=${code} maxlength="6" placeholder="e.g. LION42" inputmode="text" autocomplete="off"
         onInput=${e=>{setCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g,''));setErr('');}}
         onKeyDown=${e=>e.key==='Enter'&&join()}/>
       ${err?html`<p class="cj-err">${err}</p>`:null}
-      <button class="btn btn-primary btn-full" onClick=${join} disabled=${loading}>${loading?'⏳ Joining…':'→ Join Class'}</button>
+      <button class="btn btn-primary btn-full" onClick=${()=>join()} disabled=${loading}>${loading?'⏳ Joining…':'→ Join Class'}</button>
     </div>
-    <p class="cj-hint">Your teacher will show you the 6-letter code on the board</p>
+    <p class="cj-hint">Your teacher will show the code or QR on the board</p>
   </div>`;
 }
 
@@ -1534,7 +1548,8 @@ function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
 
 // ── App ────────────────────────────────────────────────────────
 function App() {
-  const [screen,setScreen]           = useState('landing');
+  const [urlClassCode]               = useState(()=>{ try{return new URLSearchParams(window.location.search).get('class')||'';}catch{return '';} });
+  const [screen,setScreen]           = useState(()=>urlClassCode?'classjoin':'landing');
   const [activeTask,setActiveTask]   = useState(null);
   const [activeSettings,setActiveSettings] = useState(loadSettings);
   const [db,setDb]                   = useState(null);
@@ -1574,10 +1589,10 @@ function App() {
   if (screen==='boardtimer')   return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
   if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
-  if (screen==='classjoin')    return html`<${ClassJoin} db=${db} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen('select')}/>`;
+  if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
   if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings(loadSettings());setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
   if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
-  return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('select')} onStickers=${()=>setScreen('stickers')} useFirebaseAuth=${!!_fbAuth}/>`;
+  return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('classjoin')} onStickers=${()=>setScreen('stickers')} useFirebaseAuth=${!!_fbAuth}/>`;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
