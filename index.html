@@ -114,8 +114,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px;}
 .task-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border-left:5px solid var(--cc,var(--blue));transition:transform .15s,box-shadow .15s;}
 .task-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
-.tc-img{height:88px;background-size:cover;background-position:center;position:relative;}
-.tc-img::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.3) 100%);}
+.tc-icon-hdr{height:80px;display:flex;align-items:center;justify-content:center;font-size:2.8rem;border-radius:var(--r) var(--r) 0 0;}
 .tc-top{padding:14px 14px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;}
 .sub-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:999px;font-size:.82rem;font-weight:800;}
 .tc-actions{display:flex;gap:6px;}
@@ -178,8 +177,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .ps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;}
 .ps-card{background:rgba(255,255,255,.95);border-radius:20px;padding:22px 16px;text-align:center;cursor:pointer;border:none;transition:transform .15s,box-shadow .15s;box-shadow:0 6px 24px rgba(0,0,0,.14);display:flex;flex-direction:column;align-items:center;gap:9px;min-height:148px;overflow:hidden;position:relative;}
 .ps-card:active{transform:scale(.97);}
-.ps-ico{font-size:2.6rem;}
-.ps-card-img{width:72px;height:72px;border-radius:16px;background-size:cover;background-position:center;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.18);}
+.subj-icon{width:72px;height:72px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:2.6rem;flex-shrink:0;box-shadow:0 3px 12px rgba(0,0,0,.1);}
 .ps-subj{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#6366F1;}
 .ps-name{font-family:'Fredoka One',cursive;font-size:1rem;color:#1E1B4B;text-wrap:balance;line-height:1.25;}
 
@@ -420,19 +418,18 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const genClassCode = () => Array.from({ length: 6 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 
 const SUBJECTS = [
-  { id:'english',   label:'English',   emoji:'📝', col:'#3B82F6', light:'#DBEAFE', dark:'#1D4ED8', img:'1554721299-e0b8aa7666ce' },
-  { id:'maths',     label:'Maths',     emoji:'🔢', col:'#8B5CF6', light:'#EDE9FE', dark:'#6D28D9', img:'1635372722656-389f87a941b7' },
-  { id:'science',   label:'Science',   emoji:'🔬', col:'#10B981', light:'#D1FAE5', dark:'#065F46', img:'1554475901-4538ddfbccc2' },
-  { id:'history',   label:'History',   emoji:'🏛️',  col:'#F59E0B', light:'#FEF3C7', dark:'#92400E', img:'1572905421176-6fa2f11a236e' },
-  { id:'art',       label:'Art',       emoji:'🎨', col:'#EC4899', light:'#FCE7F3', dark:'#9D174D', img:'1513542789411-b6a5d4f31634' },
-  { id:'pe',        label:'P.E.',      emoji:'⚽', col:'#EF4444', light:'#FEE2E2', dark:'#991B1B', img:'1622659097509-4d56de14539e' },
+  { id:'english',   label:'English',   emoji:'📝', col:'#3B82F6', light:'#DBEAFE', dark:'#1D4ED8' },
+  { id:'maths',     label:'Maths',     emoji:'🔢', col:'#8B5CF6', light:'#EDE9FE', dark:'#6D28D9' },
+  { id:'science',   label:'Science',   emoji:'🔬', col:'#10B981', light:'#D1FAE5', dark:'#065F46' },
+  { id:'history',   label:'History',   emoji:'🏛️',  col:'#F59E0B', light:'#FEF3C7', dark:'#92400E' },
+  { id:'art',       label:'Art',       emoji:'🎨', col:'#EC4899', light:'#FCE7F3', dark:'#9D174D' },
+  { id:'pe',        label:'P.E.',      emoji:'⚽', col:'#EF4444', light:'#FEE2E2', dark:'#991B1B' },
   { id:'geography', label:'Geography', emoji:'🌍', col:'#06B6D4', light:'#CFFAFE', dark:'#155E75' },
   { id:'dt',        label:'D.T.',      emoji:'🔧', col:'#D97706', light:'#FEF3C7', dark:'#92400E' },
   { id:'mfl',       label:'MFL',       emoji:'🗺️',  col:'#059669', light:'#D1FAE5', dark:'#065F46' },
   { id:'re',        label:'R.E.',      emoji:'🕊️',  col:'#7C3AED', light:'#EDE9FE', dark:'#4C1D95' },
   { id:'other',     label:'Other',     emoji:'📚', col:'#6B7280', light:'#F3F4F6', dark:'#374151' },
 ];
-const unsplashImg = id => `https://images.unsplash.com/photo-${id}?w=400&auto=format&fit=crop&q=80`;
 const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
 const STEP_TYPES = [
   { v:'copy_title', l:'📋 Copy Title & Date' },
@@ -1398,7 +1395,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
       html`<div class="task-grid">${tasks.map(task=>{
         const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
         return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
-          ${s.img?html`<div class="tc-img" style=${{backgroundImage:`url(${unsplashImg(s.img)})`}}></div>`:null}
+          <div class="tc-icon-hdr" style=${{background:s.light}}>${s.emoji}</div>
           <div class="tc-top">
             <span class="sub-badge" style=${{background:s.light,color:s.dark}}>${s.emoji} ${s.label}</span>
             <div class="tc-actions">
@@ -1462,7 +1459,7 @@ function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
     html`<div class="ps-grid">${tasks.map(t=>{
       const s=SUBJECTS.find(x=>x.id===t.subject)||SUBJECTS[7];
       return html`<button key=${t.id} class="ps-card" onClick=${()=>onSelect(t)}>
-        ${s.img?html`<div class="ps-card-img" style=${{backgroundImage:`url(${unsplashImg(s.img)})`}}></div>`:html`<div class="ps-ico">${s.emoji}</div>`}
+        <div class="subj-icon" style=${{background:s.light}}>${s.emoji}</div>
         <div class="ps-subj">${s.label}</div>
         <div class="ps-name">${t.title}</div>
         ${t.timerMins>0?html`<div style=${{fontSize:'.72rem',color:'#6366F1',fontWeight:800}}>⏱ ${t.timerMins} min</div>`:null}
