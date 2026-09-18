@@ -48,14 +48,13 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 
 /* LANDING */
 .landing{min-height:100vh;background:linear-gradient(150deg,#3B82F6 0%,#6366F1 45%,#8B5CF6 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;gap:24px;position:relative;overflow:hidden;}
-.landing-date{text-align:right;color:rgba(255,255,255,.92);}
+.landing-date{position:absolute;top:18px;right:20px;text-align:right;color:rgba(255,255,255,.92);pointer-events:none;}
 .landing-date-day{font-family:'Fredoka One',cursive;font-size:1.05rem;letter-spacing:.04em;}
 .landing-date-full{font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);margin-top:1px;}
-.landing-topbar{display:flex;flex-direction:column;align-items:flex-end;width:100%;max-width:440px;gap:2px;}
 .landing::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 60% at 20% 15%,rgba(255,255,255,.13) 0%,transparent 60%);pointer-events:none;}
 .landing-hero{text-align:center;animation:bounceIn .7s ease both;}
 .mascot{width:150px;height:150px;margin:0 auto 14px;animation:floaty 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 24px rgba(0,0,0,.22));}
-.landing-title{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,8vw,3.8rem);color:#fff;letter-spacing:.02em;text-shadow:0 3px 12px rgba(0,0,0,.2);text-align:right;}
+.landing-title{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,8vw,3.8rem);color:#fff;letter-spacing:.02em;text-shadow:0 3px 12px rgba(0,0,0,.2);}
 .landing-sub{font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.85);margin-top:4px;}
 .mode-btns{display:flex;flex-direction:column;gap:14px;width:100%;max-width:440px;animation:slideUp .6s .25s ease both;}
 .mode-btn{display:flex;align-items:center;gap:14px;padding:18px 22px;border-radius:20px;border:none;cursor:pointer;background:rgba(255,255,255,.96);box-shadow:0 8px 32px rgba(0,0,0,.18);transition:transform .15s,box-shadow .15s;text-align:left;color:var(--text);}
@@ -252,6 +251,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .copy-line-right{text-align:right;}
 .clt{font-family:'Fredoka One',cursive;font-size:clamp(1.3rem,4vw,1.9rem);color:#1E1B4B;display:inline-block;clip-path:inset(0 100% 0 0);}
 .clt.show{animation:writeIn .75s ease both;clip-path:inset(0 0% 0 0);}
+.copy-word{display:inline-block;}
 .cl-ul{display:block;height:3px;background:#1E1B4B;border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .6s ease;margin-top:4px;}
 .cl-ul.show{transform:scaleX(1);}
 .cl-ul-right{transform-origin:right;}
@@ -802,10 +802,10 @@ function CopyTitleStep({ step, task, pupilName, className }) {
   if (full) return html`<div class="copy-step">
     <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy your name, class, date and title — underline each one</span></div>
     <div class="lined-paper four-lines">
-      <div class="copy-line"><span class=${'clt'+(ph>=1?' show':'')}>${pupilName||'Your Name'}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${className||'Your Class'}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
-      <div class="copy-line copy-line-right"><span class=${'clt'+(ph>=5?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=6?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=7?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=8?' show':'')}></span></div>
+      <div class="copy-line"><span class="copy-word"><span class=${'clt'+(ph>=1?' show':'')}>${pupilName||'Your Name'}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></span></div>
+      <div class="copy-line"><span class="copy-word"><span class=${'clt'+(ph>=3?' show':'')}>${className||'Your Class'}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></span></div>
+      <div class="copy-line copy-line-right"><span class="copy-word"><span class=${'clt'+(ph>=5?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=6?' show':'')}></span></span></div>
+      <div class="copy-line"><span class="copy-word"><span class=${'clt'+(ph>=7?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=8?' show':'')}></span></span></div>
     </div>
     ${ph>=9?html`<div class="copy-done">✅ Brilliant — now copy all four lines in your book and underline them!</div>`:null}
   </div>`;
@@ -813,8 +813,8 @@ function CopyTitleStep({ step, task, pupilName, className }) {
   return html`<div class="copy-step">
     <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy the date and title — then underline both</span></div>
     <div class="lined-paper">
-      <div class="copy-line copy-line-right"><span class=${'clt'+(ph>=1?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=2?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
+      <div class="copy-line copy-line-right"><span class="copy-word"><span class=${'clt'+(ph>=1?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=2?' show':'')}></span></span></div>
+      <div class="copy-line"><span class="copy-word"><span class=${'clt'+(ph>=3?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></span></div>
     </div>
     ${ph>=5?html`<div class="copy-done">✅ Great work — now do the same in your book!</div>`:null}
   </div>`;
@@ -1521,14 +1521,12 @@ function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
   const handleTeacher = () => useFirebaseAuth ? onTeacher() : setShowPin(true);
   return html`<div class="landing">
     ${showPin?html`<${PinModal} pin=${settings.pin} onOk=${()=>{setShowPin(false);onTeacher();}} onCancel=${()=>setShowPin(false)}/>`:null}
-    <div class="landing-topbar">
-      <h1 class="landing-title">🎯 On Focus</h1>
-      <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
-    </div>
+    <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
     <div class="landing-hero">
       <div class="mascot">
         <img src="penguin.png" alt="Mascot" style=${{width:'100%',height:'100%',objectFit:'contain'}}/>
       </div>
+      <h1 class="landing-title">🎯 On Focus</h1>
       <p class="landing-sub">Ready to learn something brilliant?</p>
     </div>
     <div class="mode-btns">
