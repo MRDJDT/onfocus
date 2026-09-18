@@ -1,4 +1,4 @@
-<title>Focus Time</title>
+<title>On Focus</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -249,10 +249,12 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .lined-paper::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(transparent,transparent 33px,#BFDBFE 33px,#BFDBFE 34px);pointer-events:none;z-index:0;}
 .lined-paper::after{content:'';position:absolute;left:56px;top:0;bottom:0;width:2px;background:#FCA5A5;pointer-events:none;z-index:0;}
 .copy-line{position:relative;z-index:1;}
+.copy-line-right{text-align:right;}
 .clt{font-family:'Fredoka One',cursive;font-size:clamp(1.3rem,4vw,1.9rem);color:#1E1B4B;display:inline-block;clip-path:inset(0 100% 0 0);}
 .clt.show{animation:writeIn .75s ease both;clip-path:inset(0 0% 0 0);}
 .cl-ul{display:block;height:3px;background:#1E1B4B;border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .6s ease;margin-top:4px;}
 .cl-ul.show{transform:scaleX(1);}
+.cl-ul-right{transform-origin:right;}
 .copy-done{display:flex;align-items:center;gap:10px;background:var(--green-l);color:#15803D;border-radius:var(--r-sm);padding:13px 18px;font-weight:800;font-size:1rem;animation:bounceIn .4s ease both;}
 
 /* INSTRUCTION STEP */
@@ -798,21 +800,21 @@ function CopyTitleStep({ step, task, pupilName, className }) {
   },[]);
 
   if (full) return html`<div class="copy-step">
-    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy your name, class, title and date — underline each one</span></div>
+    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy your name, class, date and title — underline each one</span></div>
     <div class="lined-paper four-lines">
       <div class="copy-line"><span class=${'clt'+(ph>=1?' show':'')}>${pupilName||'Your Name'}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></div>
       <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${className||'Your Class'}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=5?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=6?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=7?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul'+(ph>=8?' show':'')}></span></div>
+      <div class="copy-line copy-line-right"><span class=${'clt'+(ph>=5?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=6?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=7?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=8?' show':'')}></span></div>
     </div>
     ${ph>=9?html`<div class="copy-done">✅ Brilliant — now copy all four lines in your book and underline them!</div>`:null}
   </div>`;
 
   return html`<div class="copy-step">
-    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy the title and date — then underline both</span></div>
+    <div class="copy-hdr"><span class="copy-pencil">✏️</span><span class="copy-hdr-text">Copy the date and title — then underline both</span></div>
     <div class="lined-paper">
-      <div class="copy-line"><span class=${'clt'+(ph>=1?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=2?' show':'')}></span></div>
-      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
+      <div class="copy-line copy-line-right"><span class=${'clt'+(ph>=1?' show':'')}>${fmtDate(task.date)}</span><span class=${'cl-ul cl-ul-right'+(ph>=2?' show':'')}></span></div>
+      <div class="copy-line"><span class=${'clt'+(ph>=3?' show':'')}>${task.title}</span><span class=${'cl-ul'+(ph>=4?' show':'')}></span></div>
     </div>
     ${ph>=5?html`<div class="copy-done">✅ Great work — now do the same in your book!</div>`:null}
   </div>`;
@@ -1520,7 +1522,7 @@ function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
   return html`<div class="landing">
     ${showPin?html`<${PinModal} pin=${settings.pin} onOk=${()=>{setShowPin(false);onTeacher();}} onCancel=${()=>setShowPin(false)}/>`:null}
     <div class="landing-topbar">
-      <h1 class="landing-title">🎯 Focus Time</h1>
+      <h1 class="landing-title">🎯 On Focus</h1>
       <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
     </div>
     <div class="landing-hero">
