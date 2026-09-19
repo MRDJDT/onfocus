@@ -1,25 +1,20 @@
-const CACHE = 'onfocus-v1';
+const CACHE = 'onfocus-v2';
 
-// App shell — cached on install
 const PRECACHE = [
-  '/',
-  '/index.html',
   '/penguin.png',
   '/teacher.svg',
   '/pupils.svg',
   '/manifest.json',
 ];
 
-// CDN hostnames whose responses we cache on first fetch
 const CDN_HOSTS = new Set([
   'cdnjs.cloudflare.com',
   'cdn.jsdelivr.net',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
-  'www.gstatic.com',   // Firebase SDK scripts
+  'www.gstatic.com',
 ]);
 
-// Firebase live-data endpoints — never cache these
 const SKIP_HOSTS = new Set([
   'firestore.googleapis.com',
   'identitytoolkit.googleapis.com',
@@ -45,27 +40,22 @@ self.addEventListener('fetch', e => {
 
   const url = new URL(e.request.url);
 
+  // Never intercept navigation — let Cloudflare Pages serve the page
+  if (e.request.mode === 'navigate') return;
+
   // Pass Firebase live requests straight through
   if (SKIP_HOSTS.has(url.hostname)) return;
 
-  // Navigation requests → serve index.html from cache (SPA fallback)
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      caches.match('/index.html').then(cached => cached || fetch(e.request))
-    );
-    return;
-  }
-
-  // Cache-first for app shell + CDN resources
   const shouldCache = url.hostname === self.location.hostname || CDN_HOSTS.has(url.hostname);
+  if (!shouldCache) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        if (res.ok && shouldCache) {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+        // Only cache clean, non-redirected responses
+        if (res.ok && !res.redirected) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         }
         return res;
       });
