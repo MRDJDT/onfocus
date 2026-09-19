@@ -10,6 +10,7 @@ const PRECACHE = [
 const CDN_HOSTS = new Set([
   'cdnjs.cloudflare.com',
   'cdn.jsdelivr.net',
+  'unpkg.com',
   'fonts.googleapis.com',
   'fonts.gstatic.com',
   'www.gstatic.com',
@@ -53,9 +54,10 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => {
       if (cached) return cached;
       return fetch(e.request).then(res => {
-        // Only cache clean, non-redirected responses
+        // Clone before the browser consumes the body
         if (res.ok && !res.redirected) {
-          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+          const clone = res.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return res;
       });
