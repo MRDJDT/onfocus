@@ -1264,17 +1264,104 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList, updatedAt: Date.now()}).catch(()=>{});
   };
 
-  // Load classes + tasks from Firestore on login
+  // Load classes + tasks from Firestore on login; seed sample data on first use
   useEffect(()=>{
     if (!db || !uid) return;
+    const g = ()=>Math.random().toString(36).slice(2,10);
+    const today = todayISO();
+    const makeSampleData = () => {
+      const cls = [
+        { id:g(), name:'7A English', code:genClassCode() },
+        { id:g(), name:'8B Maths',   code:genClassCode() },
+        { id:g(), name:'9C Science', code:genClassCode() },
+      ];
+      const tasks = {
+        [cls[0].id]: [
+          { id:g(), subject:'english', title:'Descriptive Writing', date:today, timerMins:20,
+            vocab:[{id:g(),word:'Adjective',def:'A word that describes a noun, e.g. "golden", "enormous"'},{id:g(),word:'Adverb',def:'A word that modifies a verb, e.g. "silently", "suddenly"'},{id:g(),word:'Simile',def:'A comparison using "like" or "as", e.g. "as cold as ice"'}],
+            steps:[
+              {id:g(),type:'copy_title'},
+              {id:g(),type:'instruction',icon:'📖',text:'Read the extract on the board carefully',detail:'Look for examples of descriptive language — underline any you spot'},
+              {id:g(),type:'think',icon:'🤔',text:'What can the character see, hear, smell, touch and taste?',detail:'Jot down ideas — you can use the word bank to help'},
+              {id:g(),type:'task',icon:'✏️',text:'Write your own descriptive paragraph',detail:'Try to use at least one adjective, one adverb and one simile'},
+              {id:g(),type:'task',icon:'🌟',text:'Swap with a partner and highlight their best phrase',detail:'Tell them why you chose it'},
+            ]},
+          { id:g(), subject:'english', title:'Reading Comprehension', date:today, timerMins:30,
+            vocab:[{id:g(),word:'Inference',def:'Working out something the author implies but doesn\'t say directly'},{id:g(),word:'Evidence',def:'A quote from the text that supports your answer'}],
+            steps:[
+              {id:g(),type:'copy_title_full'},
+              {id:g(),type:'instruction',icon:'📖',text:'Read the passage on pages 12–13 carefully',detail:'Read it through twice before answering any questions'},
+              {id:g(),type:'task',icon:'✏️',text:'Answer questions 1–4 in full sentences',detail:'Use the PEE structure: Point, Evidence, Explain'},
+              {id:g(),type:'task',icon:'🌟',text:'Extension: Why did the author choose this language?',detail:'Think about the effect on the reader'},
+            ]},
+        ],
+        [cls[1].id]: [
+          { id:g(), subject:'maths', title:'Solving Linear Equations', date:today, timerMins:25,
+            vocab:[{id:g(),word:'Variable',def:'A letter representing an unknown number, e.g. x or y'},{id:g(),word:'Equation',def:'A mathematical statement that two things are equal'}],
+            steps:[
+              {id:g(),type:'copy_title'},
+              {id:g(),type:'instruction',icon:'📐',text:'Watch the worked example on the board',detail:'Write it into your book step by step'},
+              {id:g(),type:'task',icon:'✏️',text:'Complete questions 1–5 (page 47)',detail:'Show every step of your working'},
+              {id:g(),type:'task',icon:'🌟',text:'Challenge: Try questions A–C',detail:'These use two-step equations'},
+              {id:g(),type:'think',icon:'🤔',text:'Check your answers',detail:'Substitute your answer back into the equation — does it balance?'},
+            ]},
+          { id:g(), subject:'maths', title:'Fractions, Decimals & Percentages', date:today, timerMins:20,
+            vocab:[{id:g(),word:'Numerator',def:'The top number of a fraction'},{id:g(),word:'Denominator',def:'The bottom number of a fraction'}],
+            steps:[
+              {id:g(),type:'copy_title'},
+              {id:g(),type:'instruction',icon:'📐',text:'Copy the key equivalences from the board',detail:'½ = 0.5 = 50%, ¼ = 0.25 = 25%, ¾ = 0.75 = 75%'},
+              {id:g(),type:'task',icon:'✏️',text:'Convert the fractions on Worksheet 3A to decimals',detail:'Divide the numerator by the denominator'},
+              {id:g(),type:'task',icon:'✏️',text:'Convert your decimals to percentages',detail:'Multiply by 100'},
+              {id:g(),type:'task',icon:'🌟',text:'Highlight any you found tricky',detail:'We will go through these together at the end'},
+            ]},
+        ],
+        [cls[2].id]: [
+          { id:g(), subject:'science', title:'Photosynthesis', date:today, timerMins:30,
+            vocab:[{id:g(),word:'Chlorophyll',def:'The green pigment in leaves that absorbs sunlight'},{id:g(),word:'Glucose',def:'The sugar produced by photosynthesis'},{id:g(),word:'Chloroplast',def:'The part of a plant cell where photosynthesis takes place'}],
+            steps:[
+              {id:g(),type:'copy_title_full'},
+              {id:g(),type:'instruction',icon:'🔬',text:'Copy the word equation into your book',detail:'Carbon dioxide + Water → Glucose + Oxygen  (needs light and chlorophyll)'},
+              {id:g(),type:'task',icon:'✏️',text:'Label the leaf diagram (Worksheet 2B)',detail:'Include: upper epidermis, palisade cells, chloroplasts, stomata'},
+              {id:g(),type:'task',icon:'✏️',text:'Explain in your own words why plants need sunlight',detail:'Write at least three sentences'},
+              {id:g(),type:'think',icon:'🤔',text:'What would happen to a plant kept in complete darkness?',detail:'Discuss with your partner, then write your prediction'},
+            ]},
+          { id:g(), subject:'science', title:'The Periodic Table', date:today, timerMins:20,
+            vocab:[{id:g(),word:'Element',def:'A pure substance made of only one type of atom'},{id:g(),word:'Atomic number',def:'The number of protons in an atom\'s nucleus'},{id:g(),word:'Period',def:'A horizontal row in the Periodic Table'}],
+            steps:[
+              {id:g(),type:'copy_title'},
+              {id:g(),type:'instruction',icon:'🔬',text:'Look at the Periodic Table — find the metals and non-metals',detail:'Metals are on the left, non-metals on the right (with a staircase boundary)'},
+              {id:g(),type:'task',icon:'✏️',text:'Note the lightest element, the heaviest shown, and three you recognise',detail:'Write their names, symbols and atomic numbers'},
+              {id:g(),type:'task',icon:'🌟',text:'Complete the element fact file for your assigned element',detail:'Include: symbol, atomic number, type (metal/non-metal), one use'},
+            ]},
+        ],
+      };
+      return { cls, tasks };
+    };
+
     db.doc('teachers/'+uid).get().then(snap=>{
-      if (!snap.exists || !snap.data().classes?.length) return;
-      const fbClasses = snap.data().classes;
-      setClasses(fbClasses);
-      saveClasses(fbClasses);
-      const saved = loadActiveClassId();
-      const activeId = (saved && fbClasses.find(c=>c.id===saved)) ? saved : fbClasses[0]?.id || '';
-      setActiveClsId(activeId);
+      if (snap.exists && snap.data().classes?.length) {
+        const fbClasses = snap.data().classes;
+        setClasses(fbClasses);
+        saveClasses(fbClasses);
+        const saved = loadActiveClassId();
+        const activeId = (saved && fbClasses.find(c=>c.id===saved)) ? saved : fbClasses[0]?.id || '';
+        setActiveClsId(activeId);
+      } else {
+        // First login — seed sample classes and tasks
+        const { cls, tasks } = makeSampleData();
+        setClasses(cls); saveClasses(cls);
+        db.doc('teachers/'+uid).set({classes: cls}).catch(()=>{});
+        cls.forEach(c => {
+          const t = tasks[c.id] || [];
+          saveTasksForClass(c.id, t);
+          db.doc('teachers/'+uid+'/tasks/'+c.id).set({items: t}).catch(()=>{});
+          db.doc('classes/'+c.code).set({name: c.name, tasks: t, updatedAt: Date.now()}).catch(()=>{});
+        });
+        const firstId = cls[0].id;
+        setActiveClsId(firstId);
+        saveActiveClassId(firstId);
+        setTasks(tasks[firstId] || []);
+      }
     }).catch(()=>{});
   },[db, uid]);
 
