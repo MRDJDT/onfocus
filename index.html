@@ -1230,6 +1230,7 @@ function QRModal({ url, onClose }) {
 
 // ── TeacherMode ────────────────────────────────────────────────
 function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut }) {
+  const uid = teacher?.uid || null;
   const [classes, setClasses]       = useState(loadClasses);
   const [activeClsId, setActiveClsId] = useState(() => {
     const saved = loadActiveClassId();
@@ -1249,11 +1250,52 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   const [helpCount, setHelpCount]   = useState(0);
   const [checkins, setCheckins]     = useState({happy:0,ok:0,unsure:0});
 
-  // reload tasks when active class changes
+  // Firestore helpers — write teacher's classes and tasks to db
+  const fbSaveClasses = cls => {
+    if (!db || !uid) return;
+    db.doc('teachers/'+uid).set({classes: cls}, {merge: true}).catch(()=>{});
+  };
+  const fbSaveTasks = (classId, taskList, cls) => {
+    if (!db || !uid) return;
+    db.doc('teachers/'+uid+'/tasks/'+classId).set({items: taskList}).catch(()=>{});
+    // keep published class in sync so pupils always see current tasks
+    const code = (cls || classes.find(c=>c.id===classId))?.code;
+    const name = (cls || classes.find(c=>c.id===classId))?.name;
+    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList, updatedAt: Date.now()}).catch(()=>{});
+  };
+
+  // Load classes + tasks from Firestore on login
   useEffect(()=>{
-    setTasks(loadTasksForClass(activeCls.id));
+    if (!db || !uid) return;
+    db.doc('teachers/'+uid).get().then(snap=>{
+      if (!snap.exists || !snap.data().classes?.length) return;
+      const fbClasses = snap.data().classes;
+      setClasses(fbClasses);
+      saveClasses(fbClasses);
+      const saved = loadActiveClassId();
+      const activeId = (saved && fbClasses.find(c=>c.id===saved)) ? saved : fbClasses[0]?.id || '';
+      setActiveClsId(activeId);
+    }).catch(()=>{});
+  },[db, uid]);
+
+  // reload tasks when active class changes (Firestore first, localStorage fallback)
+  useEffect(()=>{
     setHelpCount(0); setCheckins({happy:0,ok:0,unsure:0});
-  },[activeCls.id]);
+    if (!activeCls.id) return;
+    if (db && uid) {
+      db.doc('teachers/'+uid+'/tasks/'+activeCls.id).get().then(snap=>{
+        if (snap.exists) {
+          const fbTasks = snap.data().items || [];
+          setTasks(fbTasks);
+          saveTasksForClass(activeCls.id, fbTasks);
+        } else {
+          setTasks(loadTasksForClass(activeCls.id));
+        }
+      }).catch(()=>setTasks(loadTasksForClass(activeCls.id)));
+    } else {
+      setTasks(loadTasksForClass(activeCls.id));
+    }
+  },[activeCls.id, db, uid]);
 
   // live signals subscription
   useEffect(()=>{
@@ -1266,11 +1308,11 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
 
   const saveTask = t => {
     const next = tasks.find(x=>x.id===t.id) ? tasks.map(x=>x.id===t.id?t:x) : [...tasks,t];
-    setTasks(next); saveTasksForClass(activeCls.id, next); setEditing(null);
+    setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next); setEditing(null);
   };
   const delTask = id => {
     const next = tasks.filter(t=>t.id!==id);
-    setTasks(next); saveTasksForClass(activeCls.id, next);
+    setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next);
   };
   const updSet = patch => { const s={...settings,...patch}; setSettings(s); saveSettings(s); };
 
@@ -1281,13 +1323,13 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   const createClass = () => {
     if (!newClassName.trim()) return;
     const cls = { id: genId(), name: newClassName.trim(), code: genClassCode() };
-    const next = [...classes, cls]; setClasses(next); saveClasses(next);
+    const next = [...classes, cls]; setClasses(next); saveClasses(next); fbSaveClasses(next);
     setNewClassName(''); switchClass(cls.id);
   };
   const deleteClass = (e, id) => {
     e.stopPropagation();
     if (classes.length <= 1) return;
-    const next = classes.filter(c=>c.id!==id); setClasses(next); saveClasses(next);
+    const next = classes.filter(c=>c.id!==id); setClasses(next); saveClasses(next); fbSaveClasses(next);
     if (activeClsId === id) switchClass(next[0].id);
   };
 
