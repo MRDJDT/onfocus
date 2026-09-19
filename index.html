@@ -1231,8 +1231,11 @@ function QRModal({ url, onClose }) {
 // ── TeacherMode ────────────────────────────────────────────────
 function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut }) {
   const uid = teacher?.uid || null;
-  const [classes, setClasses]       = useState(loadClasses);
-  const [activeClsId, setActiveClsId] = useState(() => {
+  // Only pre-load localStorage if it belongs to the same user
+  const isSameUser = (() => { try { return localStorage.getItem('ft_last_uid') === uid; } catch { return false; }})();
+  const [classes, setClasses]       = useState(()=> isSameUser ? loadClasses() : []);
+  const [activeClsId, setActiveClsId] = useState(()=>{
+    if (!isSameUser) return '';
     const saved = loadActiveClassId();
     const all = loadClasses();
     return (saved && all.find(c=>c.id===saved)) ? saved : (all[0]?.id||'');
@@ -1339,6 +1342,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     };
 
     db.doc('teachers/'+uid).get().then(snap=>{
+      try { localStorage.setItem('ft_last_uid', uid); } catch {}
       if (snap.exists && snap.data().classes?.length) {
         const fbClasses = snap.data().classes;
         setClasses(fbClasses);
