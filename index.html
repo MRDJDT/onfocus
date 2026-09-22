@@ -296,6 +296,12 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .comp-sticker-lbl{font-size:.88rem;font-weight:800;color:rgba(255,255,255,.9);}
 .comp-sticker-name{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;}
 .star-row{font-size:2.4rem;letter-spacing:4px;animation:bounceIn .6s .4s ease both;opacity:0;animation-fill-mode:both;}
+.comp-ext-btn{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:16px;padding:12px 22px;font-weight:800;font-size:.95rem;cursor:pointer;}
+.comp-ext-btn:hover{background:rgba(255,255,255,.28);}
+.comp-extension{max-width:420px;background:rgba(255,255,255,.16);border-radius:18px;padding:18px 22px;display:flex;flex-direction:column;gap:6px;animation:bounceIn .4s ease both;}
+.comp-ext-lbl{font-size:.82rem;font-weight:800;letter-spacing:.03em;color:rgba(255,255,255,.75);text-transform:uppercase;}
+.comp-ext-text{font-size:1.05rem;font-weight:700;color:#fff;text-wrap:balance;}
+.comp-ext-detail{font-size:.92rem;color:rgba(255,255,255,.85);}
 
 /* STICKER BOOK */
 .sb-screen{background:var(--bg);min-height:100vh;}
@@ -936,6 +942,7 @@ function PupilMode({ task, settings, db, onExit }) {
   const [helpSent, setHelpSent] = useState(false);
   const [checkinPending, setCheckinPending] = useState(false);
   const [pendingNext, setPendingNext] = useState(0);
+  const [showExtension, setShowExtension] = useState(false);
   const { level, perm, start, retry } = useNoise();
   const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
   const subj = SUBJECTS.find(s=>s.id===task.subject)||SUBJECTS[7];
@@ -991,6 +998,11 @@ function PupilMode({ task, settings, db, onExit }) {
         <div class="comp-sticker-name">${earnedSticker.name}</div>
       </div>`:null}
       <div class="star-row">🌟🌟🌟🌟🌟</div>
+      ${task.extension?.text?.trim()?(showExtension?html`<div class="comp-extension">
+        <div class="comp-ext-lbl">🌟 Bonus challenge</div>
+        <div class="comp-ext-text">${task.extension.text}</div>
+        ${task.extension.detail?html`<div class="comp-ext-detail">${task.extension.detail}</div>`:null}
+      </div>`:html`<button class="comp-ext-btn" onClick=${()=>setShowExtension(true)}>🌟 Finished early? Try a bonus challenge</button>`):null}
       <button class="btn btn-secondary" style=${{marginTop:'8px',background:'rgba(255,255,255,.2)',color:'#fff',border:'2px solid rgba(255,255,255,.35)'}} onClick=${onExit}>← Back to start</button>
     </div>
   </div>`;
@@ -1029,10 +1041,11 @@ function PupilMode({ task, settings, db, onExit }) {
 
 // ── TaskEditor ─────────────────────────────────────────────────
 function TaskEditor({ init, onSave, onCancel }) {
-  const [task,setTask] = useState(()=>init||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}]});
+  const [task,setTask] = useState(()=>init||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}],extension:{text:'',detail:''}});
   const [sampleApi, setSampleApi] = useState(null);
   const [generating, setGenerating] = useState({});
   const up = (k,v) => setTask(t=>({...t,[k]:v}));
+  const upExt = (k,v) => setTask(t=>({...t,extension:{...(t.extension||{}),[k]:v}}));
   const upStep=(i,k,v)=>setTask(t=>({...t,steps:t.steps.map((s,j)=>j===i?{...s,[k]:v}:s)}));
   const addStep=()=>setTask(t=>({...t,steps:[...t.steps,{id:genId(),type:'instruction',icon:'📌',text:'',detail:''}]}));
   const delStep=i=>setTask(t=>({...t,steps:t.steps.filter((_,j)=>j!==i)}));
@@ -1129,6 +1142,12 @@ function TaskEditor({ init, onSave, onCancel }) {
           </div>`)}
         </div>
         <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${addStep}>+ Add Step</button>
+      </div>
+      <div class="fcard">
+        <label class="flabel">🌟 Extension Task (optional)</label>
+        <p style=${{color:'var(--faint)',fontSize:'.82rem',margin:'0 0 10px',fontWeight:600}}>Shown to pupils who finish early, after they complete the main task.</p>
+        <input class="finput" type="text" value=${task.extension?.text||''} placeholder="e.g. Write a second paragraph from a different character's point of view" onInput=${e=>upExt('text',e.target.value)}/>
+        <input class="finput" style=${{marginTop:'8px'}} type="text" value=${task.extension?.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upExt('detail',e.target.value)}/>
       </div>
     </div>
     <div class="ed-footer">
