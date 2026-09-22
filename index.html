@@ -118,6 +118,17 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .t-body{padding:18px 18px 90px;max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:22px;}
 .tasks-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
 .tasks-hdr h2{font-family:'Fredoka One',cursive;font-size:1.35rem;color:var(--text);}
+.tasks-hdr-sub{flex:1 0 100%;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.tasks-hdr-code{font:700 .82rem 'Nunito',sans-serif;color:var(--faint);margin:0;}
+.tasks-hdr-code strong{color:var(--text);}
+.task-filters{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0;}
+.date-filter{padding:8px 12px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font:700 .85rem 'Nunito',sans-serif;outline:none;cursor:pointer;}
+.archived-block{margin-top:18px;}
+.archived-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
+.archived-item{display:flex;align-items:center;gap:10px;background:var(--surface);border-radius:10px;padding:8px 12px;box-shadow:var(--sh);opacity:.75;}
+.archived-item-emoji{font-size:1.1rem;}
+.archived-item-title{flex:1;font:700 .88rem 'Nunito',sans-serif;color:var(--text);}
+.archived-item-date{font:700 .8rem 'Nunito',sans-serif;color:var(--faint);}
 .task-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:14px;}
 .task-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;border-left:5px solid var(--cc,var(--blue));transition:transform .15s,box-shadow .15s;}
 .task-card:hover{transform:translateY(-2px);box-shadow:var(--sh-lg);}
@@ -1256,7 +1267,7 @@ function QRModal({ url, onClose }) {
 }
 
 // ── TeacherMode ────────────────────────────────────────────────
-function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut }) {
+function TeacherMode({ db, teacher, onBoardTimer, onExit, onSignOut }) {
   const uid = teacher?.uid || null;
   // Only pre-load localStorage if it belongs to the same user
   const isSameUser = (() => { try { return localStorage.getItem('ft_last_uid') === uid; } catch { return false; }})();
@@ -1275,6 +1286,9 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   const [showLive, setShowLive]     = useState(false);
   const [showQR, setShowQR]         = useState(false);
   const [showClasses, setShowClasses] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [filterSubject, setFilterSubject] = useState('all');
+  const [filterDate, setFilterDate] = useState('all');
   const [newClassName, setNewClassName] = useState('');
   const [publishState, setPublishState] = useState('idle');
   const [helpNames, setHelpNames]   = useState({});
@@ -1292,7 +1306,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     // keep published class in sync so pupils always see current tasks
     const code = (cls || classes.find(c=>c.id===classId))?.code;
     const name = (cls || classes.find(c=>c.id===classId))?.name;
-    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList, updatedAt: Date.now()}).catch(()=>{});
+    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList.filter(t=>!t.archived), updatedAt: Date.now()}).catch(()=>{});
   };
 
   // Build sample classes + tasks (called on first login or Firestore failure)
@@ -1443,6 +1457,10 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     const next = tasks.filter(t=>t.id!==id);
     setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next);
   };
+  const archiveTask = (id, archived) => {
+    const next = tasks.map(t=>t.id===id?{...t,archived}:t);
+    setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next);
+  };
   const updSet = patch => { const s={...settings,...patch}; setSettings(s); saveSettings(s); };
 
   const switchClass = id => {
@@ -1467,7 +1485,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     if (!db) { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); return; }
     setPublishState('loading');
     try {
-      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks,updatedAt:Date.now()});
+      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks:tasks.filter(t=>!t.archived),updatedAt:Date.now()});
       setPublishState('ok'); setTimeout(()=>setPublishState('idle'),3500);
     } catch { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); }
   };
@@ -1485,6 +1503,17 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   Object.entries(checkinPeople).forEach(([name,reaction])=>{ if(checkinNamesByReaction[reaction]) checkinNamesByReaction[reaction].push(name); });
   const totalCheckins = Object.keys(checkinPeople).length;
   const qrUrl = `https://onfocus.edapp.uk?class=${activeCls.code}`;
+
+  const archivedTasks = tasks.filter(t=>t.archived);
+  const today = todayISO();
+  const visibleTasks = tasks.filter(t=>{
+    if (t.archived) return false;
+    if (filterSubject!=='all' && t.subject!==filterSubject) return false;
+    if (filterDate==='today' && t.date!==today) return false;
+    if (filterDate==='upcoming' && t.date<today) return false;
+    if (filterDate==='past' && t.date>=today) return false;
+    return true;
+  });
 
   if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
 
@@ -1559,23 +1588,36 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
           <label>Alert level: ${settings.alertAt}%</label>
           <input type="range" min="30" max="95" value=${settings.alertAt} onInput=${e=>updSet({alertAt:+e.target.value})}/>
         </div>
-        <hr class="cs-divider"/>
-        <h3>📡 Publish to Class</h3>
-        <p style=${{fontSize:'.82rem',color:'var(--faint)',fontWeight:700,margin:'-4px 0 8px'}}>Pupils join with code: <strong style=${{color:'var(--text)'}}>${activeCls.code}</strong></p>
-        ${publishState==='ok'?html`<div class="cs-ok">✅ Tasks published to ${activeCls.name}!</div>`:
-          publishState==='err'?html`<div class="cs-err">❌ ${db?'Publish failed — try again':'Firebase needed for class sync'}</div>`:
-          html`<button class="btn btn-primary" onClick=${publishToClass} disabled=${publishState==='loading'}>
-            ${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}
-          </button>`}
       </div>`:null}
 
       <!-- TASKS -->
       <div class="tasks-hdr">
-        <h2>${activeCls.name} Tasks (${tasks.length})</h2>
+        <h2>${activeCls.name} Tasks (${visibleTasks.length})</h2>
+        <div class="tasks-hdr-sub">
+          <p class="tasks-hdr-code">Pupils join with code: <strong>${activeCls.code}</strong></p>
+          ${publishState==='ok'?html`<span class="cs-ok">✅ Published to ${activeCls.name}!</span>`:
+            publishState==='err'?html`<span class="cs-err">❌ ${db?'Publish failed — try again':'Firebase needed for class sync'}</span>`:null}
+        </div>
         <button class="btn btn-primary" onClick=${()=>setEditing('new')}>+ Create Task</button>
       </div>
+
+      <!-- FILTERS -->
+      ${tasks.length>0?html`<div class="task-filters">
+        <div class="chips">
+          <button class=${'chip'+(filterSubject==='all'?' sel':'')} onClick=${()=>setFilterSubject('all')}>All subjects</button>
+          ${SUBJECTS.map(s=>html`<button key=${s.id} class=${'chip'+(filterSubject===s.id?' sel':'')} style=${{'--cc':s.col}} onClick=${()=>setFilterSubject(s.id)}>${s.emoji} ${s.label}</button>`)}
+        </div>
+        <select class="date-filter" value=${filterDate} onChange=${e=>setFilterDate(e.target.value)}>
+          <option value="all">All dates</option>
+          <option value="today">Today</option>
+          <option value="upcoming">Upcoming</option>
+          <option value="past">Past</option>
+        </select>
+      </div>`:null}
+
       ${tasks.length===0?html`<div class="empty"><div class="empty-ico">📝</div><p class="empty-txt">No tasks for ${activeCls.name} yet — create your first one!</p></div>`:
-      html`<div class="task-grid">${tasks.map(task=>{
+      visibleTasks.length===0?html`<div class="empty"><div class="empty-ico">🔍</div><p class="empty-txt">No tasks match this filter</p></div>`:
+      html`<div class="task-grid">${visibleTasks.map(task=>{
         const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
         return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
           <div class="tc-icon-hdr" style=${{background:s.light}}>${s.emoji}</div>
@@ -1583,6 +1625,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
             <span class="sub-badge" style=${{background:s.light,color:s.dark}}>${s.emoji} ${s.label}</span>
             <div class="tc-actions">
               <button class="icon-btn" onClick=${()=>setEditing(task)}>✏️</button>
+              <button class="icon-btn" title="Archive" onClick=${()=>archiveTask(task.id,true)}>📦</button>
               <button class="icon-btn danger" onClick=${()=>delTask(task.id)}>🗑️</button>
             </div>
           </div>
@@ -1595,9 +1638,24 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
               ${(task.vocab||[]).length>0?html`<span>📖 ${task.vocab.length} word${task.vocab.length!==1?'s':''}</span>`:null}
             </div>
           </div>
-          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${()=>onLaunch(task,{...settings,classCode:activeCls.code,className:activeCls.name})}>▶ Launch for Class</button></div>
+          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${publishToClass} disabled=${publishState==='loading'}>${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}</button></div>
         </div>`;
       })}</div>`}
+
+      <!-- ARCHIVED -->
+      ${archivedTasks.length>0?html`<div class="archived-block">
+        <button class="btn btn-ghost btn-full" onClick=${()=>setShowArchived(s=>!s)}>${showArchived?'▲ Hide':'▼ Show'} archived (${archivedTasks.length})</button>
+        ${showArchived?html`<div class="archived-list">${archivedTasks.map(task=>{
+          const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
+          return html`<div key=${task.id} class="archived-item">
+            <span class="archived-item-emoji">${s.emoji}</span>
+            <span class="archived-item-title">${task.title}</span>
+            <span class="archived-item-date">${fmtDate(task.date)}</span>
+            <button class="icon-btn" title="Restore" onClick=${()=>archiveTask(task.id,false)}>↩️</button>
+            <button class="icon-btn danger" onClick=${()=>delTask(task.id)}>🗑️</button>
+          </div>`;
+        })}</div>`:null}
+      </div>`:null}
     </div>
   </div>`;
 }
@@ -1760,7 +1818,6 @@ function App() {
     return unsub;
   },[]);
 
-  const launch=(task,settings)=>{setActiveTask(task);setActiveSettings(settings);setScreen('pupil');};
   const signOut = () => { if(_fbAuth) _fbAuth.signOut(); setTeacher(null); setScreen('landing'); };
   const goTeacher = () => {
     if (_fbAuth && !teacher) { setScreen('teacherlogin'); }
@@ -1772,7 +1829,7 @@ function App() {
   if (screen==='stickers')     return html`<${StickerBook} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='boardtimer')   return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
   if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
-  if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
+  if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
   if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name,code)=>{setClassTasks(tasks);setClassName(name);setJoinedClassCode(code);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
   if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings({...loadSettings(),classCode:joinedClassCode,className});setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
   if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
