@@ -1425,6 +1425,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
     if (!newClassName.trim()) return;
     const cls = { id: genId(), name: newClassName.trim(), code: genClassCode() };
     const next = [...classes, cls]; setClasses(next); saveClasses(next); fbSaveClasses(next);
+    if (db) db.doc('classes/'+cls.code).set({name: cls.name, tasks: [], updatedAt: Date.now()}).catch(()=>{});
     setNewClassName(''); switchClass(cls.id);
   };
   const deleteClass = (e, id) => {
