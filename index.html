@@ -149,6 +149,11 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .live-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font:700 .95rem/1.4 'Nunito',sans-serif;color:var(--text);}
 .ci-tally{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
 .ci-tally>span{font-size:1.05rem;font-weight:800;}
+.live-names{display:flex;flex-wrap:wrap;gap:6px;width:100%;}
+.live-name-chip{background:var(--bg);border:2px solid var(--border);border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:800;color:var(--text);}
+.ci-group{display:flex;flex-direction:column;gap:3px;min-width:70px;}
+.ci-group .live-names{gap:4px;}
+.ci-group .live-name-chip{font-size:.72rem;padding:2px 8px;}
 .help-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;border-radius:50%;min-width:18px;height:18px;padding:0 3px;font:900 .68rem/18px 'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;}
 
 /* EDITOR */
@@ -964,8 +969,9 @@ function PupilMode({ task, settings, db, onExit }) {
     if (reaction && db && settings?.classCode) {
       const ref = db.doc('checkins/'+settings.classCode);
       ref.get().then(snap=>{
-        const d = snap.exists?snap.data():{happy:0,ok:0,unsure:0};
-        ref.set({...d,[reaction]:(d[reaction]||0)+1,updatedAt:Date.now()});
+        const d = snap.exists?snap.data():{people:{}};
+        const people = {...(d.people||{}), [pupilName||'Anonymous']: reaction};
+        ref.set({people,updatedAt:Date.now()});
       }).catch(()=>{});
     }
     setIdx(pendingNext); setStepKey(k=>k+1);
@@ -978,8 +984,8 @@ function PupilMode({ task, settings, db, onExit }) {
     try {
       const ref = db.doc('helpSignals/'+settings.classCode);
       const snap = await ref.get();
-      const count = snap.exists?(snap.data().count||0):0;
-      await ref.set({count:count+1,updatedAt:Date.now()});
+      const names = snap.exists?(snap.data().names||{}):{};
+      await ref.set({names:{...names,[pupilName||'Anonymous']:Date.now()},updatedAt:Date.now()});
     } catch {}
   };
 
@@ -1271,8 +1277,9 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   const [showClasses, setShowClasses] = useState(false);
   const [newClassName, setNewClassName] = useState('');
   const [publishState, setPublishState] = useState('idle');
-  const [helpCount, setHelpCount]   = useState(0);
-  const [checkins, setCheckins]     = useState({happy:0,ok:0,unsure:0});
+  const [helpNames, setHelpNames]   = useState({});
+  const [checkinPeople, setCheckinPeople] = useState({});
+  const helpCount = Object.keys(helpNames).length;
 
   // Firestore helpers — write teacher's classes and tasks to db
   const fbSaveClasses = cls => {
@@ -1402,7 +1409,7 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
 
   // reload tasks when active class changes (Firestore first, localStorage fallback)
   useEffect(()=>{
-    setHelpCount(0); setCheckins({happy:0,ok:0,unsure:0});
+    setHelpNames({}); setCheckinPeople({});
     if (!activeCls.id) return;
     if (db && uid) {
       db.doc('teachers/'+uid+'/tasks/'+activeCls.id).get().then(snap=>{
@@ -1423,8 +1430,8 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   useEffect(()=>{
     const code = activeCls.code;
     if (!db || !code) return;
-    const u1 = db.doc('helpSignals/'+code).onSnapshot(snap=>{ if(snap.exists) setHelpCount(snap.data().count||0); },()=>{});
-    const u2 = db.doc('checkins/'+code).onSnapshot(snap=>{ if(snap.exists) setCheckins(d=>({...d,...snap.data()})); },()=>{});
+    const u1 = db.doc('helpSignals/'+code).onSnapshot(snap=>{ setHelpNames(snap.exists?(snap.data().names||{}):{}); },()=>{});
+    const u2 = db.doc('checkins/'+code).onSnapshot(snap=>{ setCheckinPeople(snap.exists?(snap.data().people||{}):{}); },()=>{});
     return ()=>{ u1(); u2(); };
   },[db, activeCls.code]);
 
@@ -1466,15 +1473,17 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
   };
 
   const clearHelp = async () => {
-    setHelpCount(0);
-    if (db && activeCls.code) try { await db.doc('helpSignals/'+activeCls.code).set({count:0,updatedAt:Date.now()}); } catch {}
+    setHelpNames({});
+    if (db && activeCls.code) try { await db.doc('helpSignals/'+activeCls.code).set({names:{},updatedAt:Date.now()}); } catch {}
   };
   const clearCheckins = async () => {
-    setCheckins({happy:0,ok:0,unsure:0});
-    if (db && activeCls.code) try { await db.doc('checkins/'+activeCls.code).set({happy:0,ok:0,unsure:0,updatedAt:Date.now()}); } catch {}
+    setCheckinPeople({});
+    if (db && activeCls.code) try { await db.doc('checkins/'+activeCls.code).set({people:{},updatedAt:Date.now()}); } catch {}
   };
 
-  const totalCheckins = (checkins.happy||0)+(checkins.ok||0)+(checkins.unsure||0);
+  const checkinNamesByReaction = { happy:[], ok:[], unsure:[] };
+  Object.entries(checkinPeople).forEach(([name,reaction])=>{ if(checkinNamesByReaction[reaction]) checkinNamesByReaction[reaction].push(name); });
+  const totalCheckins = Object.keys(checkinPeople).length;
   const qrUrl = `https://onfocus.edapp.uk?class=${activeCls.code}`;
 
   if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
@@ -1525,13 +1534,14 @@ function TeacherMode({ db, teacher, onLaunch, onBoardTimer, onExit, onSignOut })
           <span>🙋 Help requests:</span>
           <strong style=${{fontSize:'1.5rem',color:helpCount>0?'var(--red)':'var(--text)'}}>${helpCount}</strong>
           ${helpCount>0?html`<button class="btn btn-ghost" style=${{padding:'5px 12px',fontSize:'.82rem',minHeight:'34px'}} onClick=${clearHelp}>Clear</button>`:null}
+          ${helpCount>0?html`<div class="live-names">${Object.keys(helpNames).map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`)}</div>`:null}
         </div>
         <div class="live-row">
           <span>Check-ins:</span>
           <div class="ci-tally">
-            <span>😊 ${checkins.happy||0}</span>
-            <span>😐 ${checkins.ok||0}</span>
-            <span>😕 ${checkins.unsure||0}</span>
+            <div class="ci-group"><span>😊 ${checkinNamesByReaction.happy.length}</span><div class="live-names">${checkinNamesByReaction.happy.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`)}</div></div>
+            <div class="ci-group"><span>😐 ${checkinNamesByReaction.ok.length}</span><div class="live-names">${checkinNamesByReaction.ok.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`)}</div></div>
+            <div class="ci-group"><span>😕 ${checkinNamesByReaction.unsure.length}</span><div class="live-names">${checkinNamesByReaction.unsure.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`)}</div></div>
             ${totalCheckins>0?html`<button class="btn btn-ghost" style=${{padding:'4px 10px',fontSize:'.78rem',minHeight:'32px'}} onClick=${clearCheckins}>Clear</button>`:null}
           </div>
         </div>
@@ -1728,6 +1738,7 @@ function App() {
   const [db,setDb]                   = useState(null);
   const [classTasks,setClassTasks]   = useState(null);
   const [className,setClassName]     = useState('');
+  const [joinedClassCode,setJoinedClassCode] = useState('');
   const [teacher,setTeacher]         = useState(null);   // Firebase User | null
   const [authReady,setAuthReady]     = useState(!_fbAuth); // true when no firebase
 
@@ -1762,8 +1773,8 @@ function App() {
   if (screen==='boardtimer')   return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
   if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onLaunch=${launch} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
-  if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name)=>{setClassTasks(tasks);setClassName(name);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
-  if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings(loadSettings());setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
+  if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name,code)=>{setClassTasks(tasks);setClassName(name);setJoinedClassCode(code);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
+  if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings({...loadSettings(),classCode:joinedClassCode,className});setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
   if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
   return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('classjoin')} onStickers=${()=>setScreen('stickers')} useFirebaseAuth=${!!_fbAuth}/>`;
 }
