@@ -351,7 +351,10 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .fv-body{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;}
 .fv-body img{max-width:100%;max-height:100%;object-fit:contain;}
 .fv-body iframe{width:100%;height:100%;border:none;background:#fff;}
-.file-step{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+.file-step{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;flex:1;min-height:0;overflow-y:auto;padding-bottom:6px;}
+.file-step.many .file-step-view{max-height:none;flex-shrink:0;}
+.file-step.many .file-step-view img{max-height:none;}
+.file-step-pdfwrap{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
 .file-step-cap{font-family:'Fredoka One',cursive;font-size:clamp(1.2rem,4vw,1.7rem);color:var(--text);text-align:center;}
 .file-step-view{width:100%;max-height:52vh;border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--sh);display:flex;align-items:center;justify-content:center;cursor:zoom-in;border:none;padding:0;}
 .file-step-view img{max-width:100%;max-height:52vh;object-fit:contain;}
@@ -841,14 +844,22 @@ function FilesPanel({ files, onOpen, onClose }) {
   </div>`;
 }
 
+const stepFileIds = step => step.fileIds || (step.fileId ? [step.fileId] : []);
+
 function FileStep({ step, files, onOpen }) {
-  const file = (files||[]).find(f=>f.id===step.fileId);
-  return html`<div class="file-step">
+  const list = stepFileIds(step).map(id=>(files||[]).find(f=>f.id===id)).filter(Boolean);
+  const many = list.length > 1;
+  return html`<div class=${'file-step'+(many?' many':'')}>
     ${step.text?html`<div class="file-step-cap">${step.text}</div>`:null}
-    ${!file?html`<p class="step-detail">This file is no longer available.</p>`
-      :file.kind==='image'?html`<button class="file-step-view" onClick=${()=>onOpen(file)} title="Tap to enlarge"><img src=${file.url} alt=${file.name}/></button>`
-      :html`<iframe class="file-step-pdf" src=${file.url} title=${file.name}></iframe>`}
-    ${file?html`<button class="file-step-open" onClick=${()=>onOpen(file)}>🔍 ${file.kind==='pdf'?'Open full screen':'Tap to enlarge'}</button>`:null}
+    ${!list.length?html`<p class="step-detail">This file is no longer available.</p>`:null}
+    ${list.map(file=>file.kind==='image'
+      ?html`<button key=${file.id} class="file-step-view" onClick=${()=>onOpen(file)} title="Tap to enlarge"><img src=${file.url} alt=${file.name}/></button>`
+      :many
+        ?html`<button key=${file.id} class="file-row" onClick=${()=>onOpen(file)}><div class="file-thumb">📄</div><span class="file-name">${file.name}</span><span class="file-meta">Open ›</span></button>`
+        :html`<div key=${file.id} class="file-step-pdfwrap">
+          <iframe class="file-step-pdf" src=${file.url} title=${file.name}></iframe>
+          <button class="file-step-open" onClick=${()=>onOpen(file)}>🔍 Open full screen</button>
+        </div>`)}
     ${step.detail?html`<p class="step-detail">${step.detail}</p>`:null}
   </div>`;
 }
@@ -1189,7 +1200,7 @@ function TaskEditor({ init, onSave, onCancel }) {
   };
   const delFile = id => setTask(t=>({...t,
     files:(t.files||[]).filter(f=>f.id!==id),
-    steps:t.steps.map(s=>s.fileId===id?{...s,fileId:''}:s),
+    steps:t.steps.map(s=>stepFileIds(s).includes(id)?{...s,fileId:undefined,fileIds:stepFileIds(s).filter(x=>x!==id)}:s),
   }));
   const canSave = task.title.trim().length>0;
 
@@ -1291,10 +1302,16 @@ function TaskEditor({ init, onSave, onCancel }) {
             </div>`:null}
             ${(step.type==='file')?html`<div class="si-body">
               ${(task.files||[]).length===0?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700,margin:0}}>Upload a file in the "Files for pupils" box above first.</p>`
-                :html`<select class="finput" value=${step.fileId||''} onChange=${e=>upStep(i,'fileId',e.target.value)}>
-                  <option value="">Choose a file…</option>
-                  ${(task.files||[]).map(f=>html`<option key=${f.id} value=${f.id}>${f.kind==='pdf'?'📄':'🖼️'} ${f.name}</option>`)}
-                </select>`}
+                :html`<div style=${{display:'flex',flexDirection:'column',gap:'6px'}}>
+                  <span style=${{color:'var(--faint)',fontSize:'.8rem',fontWeight:700}}>Tick the files to show in this step:</span>
+                  ${(task.files||[]).map(f=>{
+                    const ids=stepFileIds(step), on=ids.includes(f.id);
+                    return html`<label key=${f.id} class="file-row" style=${{cursor:'pointer',padding:'8px 12px'}}>
+                      <input type="checkbox" checked=${on} style=${{width:'20px',height:'20px',flexShrink:0}}
+                        onChange=${()=>setTask(t=>({...t,steps:t.steps.map((x,j)=>j===i?{...x,fileId:undefined,fileIds:on?ids.filter(y=>y!==f.id):[...ids,f.id]}:x)}))}/>
+                      <span class="file-name">${f.kind==='pdf'?'📄':'🖼️'} ${f.name}</span>
+                    </label>`;})}
+                </div>`}
               <input class="finput" type="text" value=${step.text||''} placeholder="Heading above the file (optional)…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Instruction below the file (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
