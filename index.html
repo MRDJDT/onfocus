@@ -337,6 +337,27 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .wb-item{background:var(--bg);border-radius:12px;padding:12px 16px;border-left:4px solid var(--blue);}
 .wb-word{font-family:'Fredoka One',cursive;font-size:1.1rem;color:var(--blue-d);display:block;margin-bottom:3px;}
 .wb-def{font-size:.9rem;font-weight:700;color:var(--text);}
+.files-btn{padding:6px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--muted);font:800 .8rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;min-height:34px;}
+.files-btn:active{transform:scale(.95);background:var(--blue-l);}
+.file-row{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--bg);border:none;border-radius:12px;padding:10px 14px;border-left:4px solid var(--coral);cursor:pointer;font-family:inherit;color:var(--text);}
+.file-row:active{transform:scale(.98);}
+.file-thumb{width:48px;height:48px;border-radius:8px;object-fit:cover;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+.file-name{font-weight:800;font-size:.95rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.file-meta{font-size:.75rem;font-weight:700;color:var(--faint);}
+.fv-screen{position:fixed;inset:0;z-index:400;background:rgba(15,14,42,.96);display:flex;flex-direction:column;animation:fadeIn .18s ease both;}
+.fv-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;color:#fff;}
+.fv-bar .fv-title{flex:1;min-width:0;font:800 1rem 'Nunito',sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fv-bar a{color:#fff;font:800 .85rem 'Nunito',sans-serif;text-decoration:none;background:rgba(255,255,255,.18);padding:8px 12px;border-radius:10px;}
+.fv-body{flex:1;min-height:0;overflow:auto;display:flex;align-items:center;justify-content:center;}
+.fv-body img{max-width:100%;max-height:100%;object-fit:contain;}
+.fv-body iframe{width:100%;height:100%;border:none;background:#fff;}
+.file-step{display:flex;flex-direction:column;align-items:center;gap:12px;width:100%;}
+.file-step-cap{font-family:'Fredoka One',cursive;font-size:clamp(1.2rem,4vw,1.7rem);color:var(--text);text-align:center;}
+.file-step-view{width:100%;max-height:52vh;border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:var(--sh);display:flex;align-items:center;justify-content:center;cursor:zoom-in;border:none;padding:0;}
+.file-step-view img{max-width:100%;max-height:52vh;object-fit:contain;}
+.file-step-pdf{width:100%;height:52vh;border:none;border-radius:16px;background:#fff;box-shadow:var(--sh);}
+.file-step-open{font:800 .9rem 'Nunito',sans-serif;color:var(--blue-d);background:var(--blue-l);border:none;padding:10px 18px;border-radius:12px;cursor:pointer;text-decoration:none;}
+.up-err{color:var(--red);font-weight:700;font-size:.85rem;margin-top:8px;}
 
 /* CHECK-IN */
 .ci-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .18s ease both;}
@@ -466,6 +487,7 @@ const STEP_TYPES = [
   { v:'instruction', l:'📌 Instruction' },
   { v:'task', l:'✏️ Activity / Task' },
   { v:'think', l:'🤔 Think & Discuss' },
+  { v:'file', l:'📎 Show a File' },
 ];
 const STICKERS = [
   { id:'star',    emoji:'⭐', name:'Star' },
@@ -562,6 +584,42 @@ const earnSticker = () => {
   saveStickers([...c, { ...next, earnedAt: Date.now() }]);
   return next;
 };
+
+// ── file uploads (Cloudflare R2 via /api/upload) ───────────────
+const MAX_UPLOAD = 10 * 1024 * 1024;
+const fmtSize = n => n < 1024*1024 ? Math.max(1, Math.round(n/1024)) + ' KB' : (n/1024/1024).toFixed(1) + ' MB';
+
+// Big photos are shrunk in the browser first so pupils on slow wifi aren't waiting on a 12 MB image.
+const shrinkImage = file => new Promise(resolve => {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 1024*1024) return resolve(file);
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    URL.revokeObjectURL(url);
+    const scale = Math.min(1, 2000 / Math.max(img.width, img.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    c.toBlob(b => resolve(b && b.size < file.size ? new File([b], file.name.replace(/\.\w+$/, '') + '.jpg', { type: 'image/jpeg' }) : file), 'image/jpeg', 0.88);
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+  img.src = url;
+});
+
+async function uploadTaskFile(file) {
+  const user = _fbAuth && _fbAuth.currentUser;
+  if (!user) throw new Error('Sign in with your teacher account to upload files.');
+  file = await shrinkImage(file);
+  if (file.size > MAX_UPLOAD) throw new Error('That file is too big — the limit is 10 MB.');
+  const fd = new FormData(); fd.append('file', file, file.name);
+  let res;
+  try { res = await fetch('/api/upload', { method: 'POST', headers: { Authorization: 'Bearer ' + await user.getIdToken() }, body: fd }); }
+  catch { throw new Error('Upload failed — check your connection and try again.'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Upload failed (' + res.status + ').');
+  return { id: genId(), name: data.name, kind: data.kind, url: data.url, size: data.size };
+}
 
 // ── audio ──────────────────────────────────────────────────────
 const playBeeps = (n = 3) => {
@@ -749,6 +807,49 @@ function WordBankPanel({ vocab, onClose }) {
         </div>`)}
       </div>
     </div>
+  </div>`;
+}
+
+// ── task files (pupil side) ────────────────────────────────────
+function FileViewer({ file, onClose }) {
+  return html`<div class="fv-screen">
+    <div class="fv-bar">
+      <span class="fv-title">${file.kind==='pdf'?'📄':'🖼️'} ${file.name}</span>
+      <a href=${file.url} target="_blank" rel="noopener">Open ↗</a>
+      <button class="icon-btn" onClick=${onClose}>✕</button>
+    </div>
+    <div class="fv-body">
+      ${file.kind==='pdf'?html`<iframe src=${file.url} title=${file.name}></iframe>`:html`<img src=${file.url} alt=${file.name}/>`}
+    </div>
+  </div>`;
+}
+
+function FilesPanel({ files, onOpen, onClose }) {
+  return html`<div class="wb-backdrop" onClick=${onClose}>
+    <div class="wb-panel" onClick=${e=>e.stopPropagation()}>
+      <div class="wb-head">
+        <h3>📎 Files</h3>
+        <button class="icon-btn" onClick=${onClose}>✕</button>
+      </div>
+      <div class="wb-list">
+        ${files.map(f=>html`<button key=${f.id} class="file-row" onClick=${()=>onOpen(f)}>
+          ${f.kind==='image'?html`<img class="file-thumb" src=${f.url} alt="" loading="lazy"/>`:html`<div class="file-thumb">📄</div>`}
+          <span class="file-name">${f.name}</span>
+        </button>`)}
+      </div>
+    </div>
+  </div>`;
+}
+
+function FileStep({ step, files, onOpen }) {
+  const file = (files||[]).find(f=>f.id===step.fileId);
+  return html`<div class="file-step">
+    ${step.text?html`<div class="file-step-cap">${step.text}</div>`:null}
+    ${!file?html`<p class="step-detail">This file is no longer available.</p>`
+      :file.kind==='image'?html`<button class="file-step-view" onClick=${()=>onOpen(file)} title="Tap to enlarge"><img src=${file.url} alt=${file.name}/></button>`
+      :html`<iframe class="file-step-pdf" src=${file.url} title=${file.name}></iframe>`}
+    ${file?html`<button class="file-step-open" onClick=${()=>onOpen(file)}>🔍 ${file.kind==='pdf'?'Open full screen':'Tap to enlarge'}</button>`:null}
+    ${step.detail?html`<p class="step-detail">${step.detail}</p>`:null}
   </div>`;
 }
 
@@ -958,12 +1059,15 @@ function PupilMode({ task, settings, db, onExit }) {
   const [checkinPending, setCheckinPending] = useState(false);
   const [pendingNext, setPendingNext] = useState(0);
   const [showExtension, setShowExtension] = useState(false);
+  const [showFiles, setShowFiles] = useState(false);
+  const [viewFile, setViewFile] = useState(null);
   const { level, perm, start, retry } = useNoise();
   const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
   const subj = SUBJECTS.find(s=>s.id===task.subject)||SUBJECTS[7];
   const totalSteps = task.steps.length;
   const step = task.steps[idx];
   const hasVocab = (task.vocab||[]).length > 0;
+  const taskFiles = task.files || [];
 
   const finish = () => { const s=earnSticker(); setEarnedSticker(s); setDone(true); };
 
@@ -1026,11 +1130,14 @@ function PupilMode({ task, settings, db, onExit }) {
   return html`<div class="pu-screen">
     ${checkinPending?html`<${CheckIn} onDone=${resolveCheckin}/>`:null}
     ${showWordBank?html`<${WordBankPanel} vocab=${task.vocab||[]} onClose=${()=>setShowWordBank(false)}/>`:null}
+    ${showFiles?html`<${FilesPanel} files=${taskFiles} onOpen=${f=>{setShowFiles(false);setViewFile(f);}} onClose=${()=>setShowFiles(false)}/>`:null}
+    ${viewFile?html`<${FileViewer} file=${viewFile} onClose=${()=>setViewFile(null)}/>`:null}
     <div class="pu-top">
       <div class="pu-info">
         <span class="pu-badge" style=${{background:subj.light,color:subj.dark}}>${subj.emoji} ${subj.label}</span>
         <span class="pu-title">${task.title}</span>
         ${pupilName?html`<button class="ne-name-chip" title="Change name" onClick=${()=>setShowNameEntry(true)}>✏️ ${pupilName}</button>`:null}
+        ${taskFiles.length?html`<button class="files-btn" onClick=${()=>taskFiles.length===1?setViewFile(taskFiles[0]):setShowFiles(true)}>📎 Files</button>`:null}
         ${hasVocab?html`<button class="words-btn" onClick=${()=>setShowWordBank(true)}>📖 Words</button>`:null}
         <button class=${'help-btn'+(helpSent?' sent':'')} onClick=${sendHelp}>
           ${helpSent?'✓ Sent!':'🙋 Help'}
@@ -1045,7 +1152,7 @@ function PupilMode({ task, settings, db, onExit }) {
       <span class="prog-lbl">Step ${idx+1} of ${totalSteps}</span>
     </div>
     <div class="step-area" key=${stepKey}>
-      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:html`<${InstructionStep} step=${step}/>`}
+      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`:html`<${InstructionStep} step=${step}/>`}
     </div>
     <div class="pu-nav">
       <button class="btn btn-secondary" onClick=${()=>go(-1)} disabled=${idx===0}>← Back</button>
@@ -1069,6 +1176,21 @@ function TaskEditor({ init, onSave, onCancel }) {
   const addVocab=()=>setTask(t=>({...t,vocab:[...(t.vocab||[]),{id:genId(),word:'',def:''}]}));
   const delVocab=i=>setTask(t=>({...t,vocab:(t.vocab||[]).filter((_,j)=>j!==i)}));
   const upVocab=(i,k,v)=>setTask(t=>({...t,vocab:(t.vocab||[]).map((item,j)=>j===i?{...item,[k]:v}:item)}));
+  const [uploading, setUploading] = useState(0);
+  const [uploadErr, setUploadErr] = useState('');
+  const addFiles = async fileList => {
+    setUploadErr('');
+    for (const f of Array.from(fileList)) {
+      setUploading(n=>n+1);
+      try { const uf = await uploadTaskFile(f); setTask(t=>({...t,files:[...(t.files||[]),uf]})); }
+      catch(e) { setUploadErr(f.name+': '+e.message); }
+      setUploading(n=>n-1);
+    }
+  };
+  const delFile = id => setTask(t=>({...t,
+    files:(t.files||[]).filter(f=>f.id!==id),
+    steps:t.steps.map(s=>s.fileId===id?{...s,fileId:''}:s),
+  }));
   const canSave = task.title.trim().length>0;
 
   useEffect(()=>{
@@ -1132,6 +1254,23 @@ function TaskEditor({ init, onSave, onCancel }) {
         <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${addVocab}>+ Add Word</button>
       </div>
       <div class="fcard">
+        <label class="flabel">📎 Files for pupils (optional)</label>
+        <p style=${{color:'var(--faint)',fontSize:'.82rem',margin:'0 0 10px',fontWeight:600}}>Upload a PDF or picture (10 MB max each). Pupils get a 📎 Files button, and you can also show one as a step below.</p>
+        <div class="steps-list">
+          ${(task.files||[]).map(f=>html`<div key=${f.id} class="step-item"><div class="si-body" style=${{flexDirection:'row',alignItems:'center',gap:'10px'}}>
+            ${f.kind==='image'?html`<img class="file-thumb" src=${f.url} alt=""/>`:html`<div class="file-thumb">📄</div>`}
+            <div style=${{flex:1,minWidth:0}}><div class="file-name">${f.name}</div><div class="file-meta">${f.kind==='pdf'?'PDF':'Picture'} · ${fmtSize(f.size||0)}</div></div>
+            <button class="icon-btn danger" onClick=${()=>delFile(f.id)}>✕</button>
+          </div></div>`)}
+        </div>
+        <label class="btn btn-ghost btn-full" style=${{marginTop:'10px',cursor:'pointer',opacity:uploading?.6:1}}>
+          ${uploading?'⏳ Uploading…':'+ Upload PDF or Picture'}
+          <input type="file" accept="application/pdf,image/*" multiple style=${{display:'none'}} disabled=${uploading>0}
+            onChange=${e=>{addFiles(e.target.files);e.target.value='';}}/>
+        </label>
+        ${uploadErr?html`<div class="up-err">⚠️ ${uploadErr}</div>`:null}
+      </div>
+      <div class="fcard">
         <label class="flabel">Steps</label>
         <div class="steps-list">
           ${task.steps.map((step,i)=>html`<div key=${step.id} class="step-item">
@@ -1150,7 +1289,16 @@ function TaskEditor({ init, onSave, onCancel }) {
               <input class="finput" type="text" value=${step.text||''} placeholder="Section heading…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Optional subtitle…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
-            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading')?html`<div class="si-body">
+            ${(step.type==='file')?html`<div class="si-body">
+              ${(task.files||[]).length===0?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700,margin:0}}>Upload a file in the "Files for pupils" box above first.</p>`
+                :html`<select class="finput" value=${step.fileId||''} onChange=${e=>upStep(i,'fileId',e.target.value)}>
+                  <option value="">Choose a file…</option>
+                  ${(task.files||[]).map(f=>html`<option key=${f.id} value=${f.id}>${f.kind==='pdf'?'📄':'🖼️'} ${f.name}</option>`)}
+                </select>`}
+              <input class="finput" type="text" value=${step.text||''} placeholder="Heading above the file (optional)…" onInput=${e=>upStep(i,'text',e.target.value)}/>
+              <input class="finput" type="text" value=${step.detail||''} placeholder="Instruction below the file (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
+            </div>`:null}
+            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading'&&step.type!=='file')?html`<div class="si-body">
               <div class="icon-grid">${ICONS.map(ic=>html`<button key=${ic} class=${'ic-opt'+(step.icon===ic?' sel':'')} onClick=${()=>upStep(i,'icon',ic)}>${ic}</button>`)}</div>
               <input class="finput" type="text" value=${step.text||''} placeholder="Instruction text…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
@@ -1168,7 +1316,7 @@ function TaskEditor({ init, onSave, onCancel }) {
     </div>
     <div class="ed-footer">
       <button class="btn btn-secondary" onClick=${onCancel}>Cancel</button>
-      <button class="btn btn-primary" disabled=${!canSave} onClick=${()=>canSave&&onSave(task)}>💾 Save Task</button>
+      <button class="btn btn-primary" disabled=${!canSave||uploading>0} onClick=${()=>canSave&&!uploading&&onSave(task)}>💾 Save Task</button>
     </div>
   </div>`;
 }
