@@ -348,6 +348,13 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 /* CHECK-IN */
 .ci-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;animation:fadeIn .18s ease both;}
 .ci-card{background:var(--surface);border-radius:24px;padding:28px 24px;max-width:360px;width:100%;box-shadow:var(--sh-lg);text-align:center;display:flex;flex-direction:column;gap:16px;animation:bounceIn .3s ease both;}
+.sp-card{background:var(--surface);border-radius:24px;padding:24px 20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:var(--sh-lg);display:flex;flex-direction:column;gap:12px;animation:bounceIn .3s ease both;}
+.sp-sub{color:var(--faint);font-size:.85rem;font-weight:700;margin:-6px 0 4px;}
+.sp-opt{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;border-radius:16px;border:2px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;font-family:inherit;color:var(--text);}
+.sp-opt:hover,.sp-opt:active{border-color:var(--violet);background:var(--violet-l);}
+.sp-emo{font-size:1.8rem;flex-shrink:0;}
+.sp-lbl{display:block;font-weight:800;font-size:.95rem;}
+.sp-desc{display:block;font-weight:600;font-size:.8rem;color:var(--faint);margin-top:2px;}
 .ci-q{font-family:'Fredoka One',cursive;font-size:1.5rem;color:var(--text);}
 .ci-btns{display:flex;gap:10px;justify-content:center;}
 .ci-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;border:2px solid var(--border);background:var(--bg);cursor:pointer;transition:all .15s;min-height:82px;}
@@ -470,13 +477,13 @@ const SUBJECTS = [
 ];
 const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
 const STEP_TYPES = [
-  { v:'copy_title', l:'📋 Copy Title & Date' },
-  { v:'copy_title_full', l:'📋 Copy Name, Class, Title & Date' },
-  { v:'heading', l:'🏷️ Section Heading' },
-  { v:'instruction', l:'📌 Instruction' },
-  { v:'task', l:'✏️ Activity / Task' },
-  { v:'think', l:'🤔 Think & Discuss' },
-  { v:'file', l:'📎 Show a File' },
+  { v:'copy_title', l:'📋 Copy Title & Date', d:'Pupils copy the title and date into their books' },
+  { v:'copy_title_full', l:'📋 Copy Name, Class, Title & Date', d:'Same, plus their name and class' },
+  { v:'heading', l:'🏷️ Section Heading', d:'A heading to split the lesson into sections' },
+  { v:'instruction', l:'📌 Instruction', d:'Tell pupils something to read or do', icon:'📌' },
+  { v:'task', l:'✏️ Activity / Task', d:'A piece of work for pupils to complete', icon:'✏️' },
+  { v:'think', l:'🤔 Think & Discuss', d:'A question to think about or talk through', icon:'🤔' },
+  { v:'file', l:'📎 Show a File', d:'Show one of the PDFs or pictures you uploaded' },
 ];
 // ── Firebase ────────────────────────────────────────────────────
 // Paste your Firebase config here — get it from console.firebase.google.com
@@ -1125,6 +1132,23 @@ function PupilMode({ task, settings, db, onExit }) {
   </div>`;
 }
 
+// ── StepPicker ─────────────────────────────────────────────────
+function StepPicker({ onPick, onClose }) {
+  return html`<div class="ci-overlay" onClick=${onClose}>
+    <div class="sp-card" onClick=${e=>e.stopPropagation()}>
+      <p class="ci-q" style=${{textAlign:'center'}}>Add a step</p>
+      <p class="sp-sub" style=${{textAlign:'center'}}>What kind of step is it?</p>
+      ${STEP_TYPES.map(t=>{
+        const [emo,...rest] = t.l.split(' ');
+        return html`<button key=${t.v} class="sp-opt" onClick=${()=>onPick(t)}>
+          <span class="sp-emo">${emo}</span>
+          <span><span class="sp-lbl">${rest.join(' ')}</span><span class="sp-desc">${t.d}</span></span>
+        </button>`;})}
+      <button class="btn btn-ghost btn-full" onClick=${onClose}>Cancel</button>
+    </div>
+  </div>`;
+}
+
 // ── TaskEditor ─────────────────────────────────────────────────
 function TaskEditor({ init, onSave, onCancel }) {
   const [task,setTask] = useState(()=>init||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}],extension:{text:'',detail:''}});
@@ -1133,7 +1157,11 @@ function TaskEditor({ init, onSave, onCancel }) {
   const up = (k,v) => setTask(t=>({...t,[k]:v}));
   const upExt = (k,v) => setTask(t=>({...t,extension:{...(t.extension||{}),[k]:v}}));
   const upStep=(i,k,v)=>setTask(t=>({...t,steps:t.steps.map((s,j)=>j===i?{...s,[k]:v}:s)}));
-  const addStep=()=>setTask(t=>({...t,steps:[...t.steps,{id:genId(),type:'instruction',icon:'📌',text:'',detail:''}]}));
+  const [pickingStep,setPickingStep] = useState(false);
+  const addStep=t=>{
+    setPickingStep(false);
+    setTask(k=>({...k,steps:[...k.steps,{id:genId(),type:t.v,...(t.icon?{icon:t.icon}:{}),text:'',detail:''}]}));
+  };
   const delStep=i=>setTask(t=>({...t,steps:t.steps.filter((_,j)=>j!==i)}));
   const moveStep=(i,d)=>setTask(t=>{const s=[...t.steps];const j=i+d;if(j<0||j>=s.length)return t;[s[i],s[j]]=[s[j],s[i]];return{...t,steps:s};});
   const addVocab=()=>setTask(t=>({...t,vocab:[...(t.vocab||[]),{id:genId(),word:'',def:''}]}));
@@ -1327,7 +1355,8 @@ function TaskEditor({ init, onSave, onCancel }) {
             </div>`:null}
           </div>`)}
         </div>
-        <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${addStep}>+ Add Step</button>
+        <button class="btn btn-ghost btn-full" style=${{marginTop:'10px'}} onClick=${()=>setPickingStep(true)}>+ Add Step</button>
+        ${pickingStep?html`<${StepPicker} onPick=${addStep} onClose=${()=>setPickingStep(false)}/>`:null}
       </div>
       <div class="fcard">
         <label class="flabel">🌟 Extension Task (optional)</label>
