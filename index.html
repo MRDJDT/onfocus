@@ -1380,8 +1380,45 @@ function TeacherLogin({ onLoggedIn, onBack }) {
 }
 
 // ── QR Modal ───────────────────────────────────────────────────
-function QRModal({ url, onClose }) {
+const joinUrl = code => `https://onfocus.edapp.uk?class=${code}`;
+const escHtml = t => String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// Print one A4 page per class, each with a big QR code, via a hidden iframe
+async function printQRSheets(list) {
+  const qr = await import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm');
+  const pages = await Promise.all(list.map(async c=>{
+    const img = await qr.toDataURL(joinUrl(c.code),{width:800,margin:2,color:{dark:'#000000',light:'#ffffff'}});
+    return `<section><h1>${escHtml(c.name)}</h1><p class="sub">Scan to join On Focus</p><img src="${img}" alt="QR code for ${escHtml(c.name)}"/><p class="code">${escHtml(c.code)}</p><p class="url">${escHtml(joinUrl(c.code))}</p></section>`;
+  }));
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><title>On Focus QR codes</title><style>
+    @page{size:A4;margin:14mm}
+    body{margin:0;font-family:'Nunito',Arial,sans-serif;color:#1E1B4B;text-align:center}
+    section{page-break-after:always;break-after:page;min-height:260mm;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8mm}
+    section:last-child{page-break-after:auto;break-after:auto}
+    h1{font-size:44pt;margin:0}.sub{font-size:22pt;margin:0}
+    img{width:150mm;height:150mm}
+    .code{font-size:40pt;font-weight:900;letter-spacing:.15em;margin:0}.url{font-size:13pt;color:#555;margin:0}
+  </style></head><body>${pages.join('')}</body></html>`;
+  const f = document.createElement('iframe');
+  f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+  document.body.appendChild(f);
+  f.srcdoc = doc;
+  await new Promise(r=>{ f.onload = r; });
+  await Promise.all(Array.from(f.contentDocument.images).map(i=>i.complete?null:new Promise(r=>{ i.onload = i.onerror = r; })));
+  f.contentWindow.focus();
+  f.contentWindow.print();
+  setTimeout(()=>f.remove(), 60000);
+}
+
+function QRModal({ url, cls, classes, onClose }) {
   const [dataUrl, setDataUrl] = useState('');
+  const [printing, setPrinting] = useState(false);
+  const [printErr, setPrintErr] = useState('');
+  const doPrint = async list => {
+    setPrintErr(''); setPrinting(true);
+    try { await printQRSheets(list); } catch { setPrintErr('Could not print — check your connection and try again.'); }
+    setPrinting(false);
+  };
   useEffect(()=>{
     let cancelled = false;
     import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')
@@ -1399,6 +1436,9 @@ function QRModal({ url, onClose }) {
         : html`<div style=${{width:'220px',height:'220px',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--faint)',margin:'0 auto'}}>Generating…</div>`
       }
       <p style=${{fontSize:'.78rem',fontWeight:800,color:'var(--muted)',letterSpacing:'.02em',wordBreak:'break-all'}}>${url}</p>
+      <button class="btn btn-secondary" style=${{width:'100%'}} disabled=${printing} onClick=${()=>doPrint([cls])}>${printing?'⏳ Preparing…':'🖨️ Print this class'}</button>
+      ${classes.length>1?html`<button class="btn btn-ghost" style=${{width:'100%'}} disabled=${printing} onClick=${()=>doPrint(classes)}>🖨️ Print all ${classes.length} classes</button>`:null}
+      ${printErr?html`<div class="up-err">⚠️ ${printErr}</div>`:null}
       <button class="btn btn-primary" style=${{width:'100%'}} onClick=${onClose}>Close</button>
     </div>
   </div>`;
@@ -1644,7 +1684,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   const checkinNamesByReaction = { happy:[], ok:[], unsure:[] };
   Object.entries(checkinPeople).forEach(([name,reaction])=>{ if(checkinNamesByReaction[reaction]) checkinNamesByReaction[reaction].push(name); });
   const totalCheckins = Object.keys(checkinPeople).length;
-  const qrUrl = `https://onfocus.edapp.uk?class=${activeCls.code}`;
+  const qrUrl = joinUrl(activeCls.code);
 
   const archivedTasks = tasks.filter(t=>t.archived);
   const today = todayISO();
@@ -1661,7 +1701,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
 
   const nameChips = names => names.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`);
   return html`<div class="t-screen">
-    ${showQR?html`<${QRModal} url=${qrUrl} onClose=${()=>setShowQR(false)}/>`:null}
+    ${showQR?html`<${QRModal} url=${qrUrl} cls=${activeCls} classes=${classes} onClose=${()=>setShowQR(false)}/>`:null}
     <div class="t-top">
     <div class="ph">
       <button class="back" onClick=${onExit}>← Home</button>
