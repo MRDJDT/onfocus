@@ -1027,7 +1027,6 @@ function PupilMode({ task, settings, db, onExit }) {
   const [showWordBank, setShowWordBank] = useState(false);
   const [helpSent, setHelpSent] = useState(false);
   const [checkinPending, setCheckinPending] = useState(false);
-  const [pendingNext, setPendingNext] = useState(0);
   const [showExtension, setShowExtension] = useState(false);
   const [showFiles, setShowFiles] = useState(false);
   const [viewFile, setViewFile] = useState(null);
@@ -1044,8 +1043,7 @@ function PupilMode({ task, settings, db, onExit }) {
   const go = dir => {
     const next = idx+dir;
     if (next<0) return;
-    if (next>=totalSteps) { finish(); return; }
-    if (dir===1) { setPendingNext(next); setCheckinPending(true); return; }
+    if (next>=totalSteps) { setCheckinPending(true); return; }
     setIdx(next); setStepKey(k=>k+1);
   };
 
@@ -1059,7 +1057,7 @@ function PupilMode({ task, settings, db, onExit }) {
         ref.set({people,updatedAt:Date.now()});
       }).catch(()=>{});
     }
-    setIdx(pendingNext); setStepKey(k=>k+1);
+    finish();
   };
 
   const sendHelp = async () => {
