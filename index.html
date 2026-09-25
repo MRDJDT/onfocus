@@ -5,7 +5,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="On Focus">
 <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/penguin.png">
+<link rel="icon" type="image/svg+xml" href="/logo.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -1469,6 +1470,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
   const [search, setSearch] = useState('');
+  const [sortBy, setSortBy] = useState('added');
   const [newClassName, setNewClassName] = useState('');
   const [publishState, setPublishState] = useState('idle');
   const [helpNames, setHelpNames]   = useState({});
@@ -1707,6 +1709,16 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     if (filterDate==='past' && t.date>=today) return false;
     return true;
   });
+  const cmpText = (a,b) => String(a||'').localeCompare(String(b||''), undefined, {sensitivity:'base', numeric:true});
+  const subjIdx = t => { const i=SUBJECTS.findIndex(x=>x.id===t.subject); return i<0?SUBJECTS.length:i; };
+  const sorters = {
+    'date-new': (a,b)=>cmpText(b.date,a.date),
+    'date-old': (a,b)=>cmpText(a.date,b.date),
+    'title':    (a,b)=>cmpText(a.title,b.title),
+    'subject':  (a,b)=>subjIdx(a)-subjIdx(b) || cmpText(a.date,b.date),
+    'added-new':(a,b)=>tasks.indexOf(b)-tasks.indexOf(a),
+  };
+  if (sorters[sortBy]) visibleTasks.sort(sorters[sortBy]);
 
   if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
 
@@ -1801,6 +1813,14 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
           <option value="today">Today</option>
           <option value="upcoming">Upcoming</option>
           <option value="past">Past</option>
+        </select>
+        <select class="date-filter" title="Sort tasks" value=${sortBy} onChange=${e=>setSortBy(e.target.value)}>
+          <option value="added">Sort: Order added</option>
+          <option value="added-new">Sort: Recently added</option>
+          <option value="date-new">Sort: Date (newest)</option>
+          <option value="date-old">Sort: Date (oldest)</option>
+          <option value="title">Sort: Title A–Z</option>
+          <option value="subject">Sort: Subject</option>
         </select>
       </div>`:null}
 
@@ -1950,7 +1970,7 @@ function Landing({ onTeacher, onPupil, useFirebaseAuth }) {
     <div class="landing-date"><div class="landing-date-day">${dayName}</div><div class="landing-date-full">${fullDate}</div></div>
     <div class="landing-hero">
       <div class="mascot">
-        <img src="penguin.png" alt="Mascot" style=${{width:'100%',height:'100%',objectFit:'contain'}}/>
+        <img src="logo.svg" alt="On Focus logo" style=${{width:'100%',height:'100%',objectFit:'contain'}}/>
       </div>
       <h1 class="landing-title">🎯 On Focus</h1>
       <p class="landing-sub">Ready to learn something brilliant?</p>

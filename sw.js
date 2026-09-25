@@ -1,7 +1,10 @@
-const CACHE = 'onfocus-v2';
+const CACHE = 'onfocus-v3';
 
 const PRECACHE = [
-  '/penguin.png',
+  '/logo.svg',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/apple-touch-icon.png',
   '/teacher.svg',
   '/pupils.svg',
   '/manifest.json',
