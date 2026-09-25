@@ -1728,7 +1728,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     <div class="t-top">
     <div class="ph">
       <button class="back" onClick=${onExit}>← Home</button>
-      <h1>👩‍🏫 ${teacher?.displayName||'Teacher'}</h1>
+      <h1>${teacher?.displayName||'Teacher'}</h1>
       <button class="icon-btn" title="Pupil QR Code" style=${{fontSize:'1.2rem'}} onClick=${()=>setShowQR(s=>!s)}>📱</button>
       <button class="icon-btn" style=${{fontSize:'1.3rem'}} onClick=${()=>setShowSettings(s=>!s)}>⚙️</button>
       ${onSignOut?html`<button class="icon-btn" title="Sign out" style=${{fontSize:'1.1rem'}} onClick=${onSignOut}>🚪</button>`:null}
