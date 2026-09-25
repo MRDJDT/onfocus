@@ -845,6 +845,7 @@ function FilesPanel({ files, onOpen, onClose }) {
 }
 
 const stepFileIds = step => step.fileIds || (step.fileId ? [step.fileId] : []);
+const withoutFileId = ({ fileId, ...rest }) => rest;
 
 function FileStep({ step, files, onOpen }) {
   const list = stepFileIds(step).map(id=>(files||[]).find(f=>f.id===id)).filter(Boolean);
@@ -1200,7 +1201,7 @@ function TaskEditor({ init, onSave, onCancel }) {
   };
   const delFile = id => setTask(t=>({...t,
     files:(t.files||[]).filter(f=>f.id!==id),
-    steps:t.steps.map(s=>stepFileIds(s).includes(id)?{...s,fileId:undefined,fileIds:stepFileIds(s).filter(x=>x!==id)}:s),
+    steps:t.steps.map(s=>stepFileIds(s).includes(id)?{...withoutFileId(s),fileIds:stepFileIds(s).filter(x=>x!==id)}:s),
   }));
   const canSave = task.title.trim().length>0;
 
@@ -1308,7 +1309,7 @@ function TaskEditor({ init, onSave, onCancel }) {
                     const ids=stepFileIds(step), on=ids.includes(f.id);
                     return html`<label key=${f.id} class="file-row" style=${{cursor:'pointer',padding:'8px 12px'}}>
                       <input type="checkbox" checked=${on} style=${{width:'20px',height:'20px',flexShrink:0}}
-                        onChange=${()=>setTask(t=>({...t,steps:t.steps.map((x,j)=>j===i?{...x,fileId:undefined,fileIds:on?ids.filter(y=>y!==f.id):[...ids,f.id]}:x)}))}/>
+                        onChange=${()=>setTask(t=>({...t,steps:t.steps.map((x,j)=>j===i?{...withoutFileId(x),fileIds:on?ids.filter(y=>y!==f.id):[...ids,f.id]}:x)}))}/>
                       <span class="file-name">${f.kind==='pdf'?'📄':'🖼️'} ${f.name}</span>
                     </label>`;})}
                 </div>`}
@@ -1465,13 +1466,16 @@ function TeacherMode({ db, teacher, onBoardTimer, onExit, onSignOut }) {
     if (!db || !uid) return;
     db.doc('teachers/'+uid).set({classes: cls}, {merge: true}).catch(()=>{});
   };
+  // Firestore throws on `undefined` values, so strip them before any write
+  const clean = v => JSON.parse(JSON.stringify(v));
   const fbSaveTasks = (classId, taskList, cls) => {
     if (!db || !uid) return;
-    db.doc('teachers/'+uid+'/tasks/'+classId).set({items: taskList}).catch(()=>{});
+    try { taskList = clean(taskList); } catch(e) { console.warn('Task save failed:', e); return; }
+    db.doc('teachers/'+uid+'/tasks/'+classId).set({items: taskList}).catch(e=>console.warn('Task save failed:', e));
     // keep published class in sync so pupils always see current tasks
     const code = (cls || classes.find(c=>c.id===classId))?.code;
     const name = (cls || classes.find(c=>c.id===classId))?.name;
-    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList.filter(t=>!t.archived), updatedAt: Date.now()}).catch(()=>{});
+    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList.filter(t=>!t.archived), updatedAt: Date.now()}).catch(e=>console.warn('Publish failed:', e));
   };
 
   // Build sample classes + tasks (called on first login or Firestore failure)
@@ -1650,7 +1654,7 @@ function TeacherMode({ db, teacher, onBoardTimer, onExit, onSignOut }) {
     if (!db) { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); return; }
     setPublishState('loading');
     try {
-      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks:tasks.filter(t=>!t.archived),updatedAt:Date.now()});
+      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks:clean(tasks.filter(t=>!t.archived)),updatedAt:Date.now()});
       setPublishState('ok'); setTimeout(()=>setPublishState('idle'),3500);
     } catch { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); }
   };
