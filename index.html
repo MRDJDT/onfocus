@@ -72,10 +72,6 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .m-label{font-size:1.15rem;font-weight:900;color:#1E1B4B;}
 .m-sub{font-size:.88rem;font-weight:700;color:#6366F1;display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;}
 .m-arrow{margin-left:auto;color:#6366F1;font-size:1.1rem;}
-.stick-badge{background:var(--gold);color:#7c5700;border-radius:999px;padding:2px 8px;font-size:.72rem;font-weight:900;display:inline-flex;align-items:center;gap:3px;white-space:nowrap;}
-.landing-links{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;animation:slideUp .5s .4s ease both;opacity:0;animation-fill-mode:both;}
-.landing-link{padding:8px 18px;border-radius:12px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font:700 .88rem/1 'Nunito',sans-serif;cursor:pointer;transition:all .15s;}
-.landing-link:active{background:rgba(255,255,255,.22);}
 
 /* PIN MODAL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px;animation:bounceIn .2s ease both;}
@@ -307,10 +303,6 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .comp-star{font-size:5.5rem;animation:spinStar .7s ease both;}
 .comp-title{font-family:'Fredoka One',cursive;font-size:clamp(2.4rem,8vw,3.8rem);color:#fff;text-shadow:0 4px 20px rgba(0,0,0,.2);text-wrap:balance;}
 .comp-sub{font-size:1.15rem;font-weight:700;color:rgba(255,255,255,.87);text-wrap:balance;}
-.comp-sticker{display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.18);border-radius:20px;padding:16px 24px;animation:bounceIn .6s .5s ease both;opacity:0;animation-fill-mode:both;}
-.comp-sticker-emo{font-size:3.2rem;animation:timerPulse 1.5s 1s ease-in-out infinite;}
-.comp-sticker-lbl{font-size:.88rem;font-weight:800;color:rgba(255,255,255,.9);}
-.comp-sticker-name{font-family:'Fredoka One',cursive;font-size:1.1rem;color:#fff;}
 .star-row{font-size:2.4rem;letter-spacing:4px;animation:bounceIn .6s .4s ease both;opacity:0;animation-fill-mode:both;}
 .comp-ext-btn{background:rgba(255,255,255,.18);color:#fff;border:2px solid rgba(255,255,255,.35);border-radius:16px;padding:12px 22px;font-weight:800;font-size:.95rem;cursor:pointer;}
 .comp-ext-btn:hover{background:rgba(255,255,255,.28);}
@@ -318,15 +310,6 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .comp-ext-lbl{font-size:.82rem;font-weight:800;letter-spacing:.03em;color:rgba(255,255,255,.75);text-transform:uppercase;}
 .comp-ext-text{font-size:1.05rem;font-weight:700;color:#fff;text-wrap:balance;}
 .comp-ext-detail{font-size:.92rem;color:rgba(255,255,255,.85);}
-
-/* STICKER BOOK */
-.sb-screen{background:var(--bg);min-height:100vh;}
-.sb-body{padding:18px;max-width:720px;margin:0 auto;}
-.sticker-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:12px;}
-.sticker-cell{background:var(--surface);border-radius:14px;padding:14px 8px;text-align:center;box-shadow:var(--sh);animation:dotPop .35s ease both;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.sticker-emoji{font-size:2.4rem;}
-.sticker-name{font-size:.75rem;font-weight:800;color:var(--text);}
-.sticker-num{font-size:.7rem;color:var(--faint);font-weight:700;}
 
 /* WORD BANK */
 .wb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;animation:fadeIn .18s ease both;}
@@ -495,19 +478,6 @@ const STEP_TYPES = [
   { v:'think', l:'🤔 Think & Discuss' },
   { v:'file', l:'📎 Show a File' },
 ];
-const STICKERS = [
-  { id:'star',    emoji:'⭐', name:'Star' },
-  { id:'gold',    emoji:'🌟', name:'Gold Star' },
-  { id:'sparkle', emoji:'✨', name:'Sparkle' },
-  { id:'medal',   emoji:'🥇', name:'Gold Medal' },
-  { id:'trophy',  emoji:'🏆', name:'Trophy' },
-  { id:'target',  emoji:'🎯', name:'Bullseye' },
-  { id:'owl',     emoji:'🦉', name:'Wise Owl' },
-  { id:'rocket',  emoji:'🚀', name:'Rocket' },
-  { id:'diamond', emoji:'💎', name:'Diamond' },
-  { id:'crown',   emoji:'👑', name:'Crown' },
-];
-
 // ── Firebase ────────────────────────────────────────────────────
 // Paste your Firebase config here — get it from console.firebase.google.com
 // Enable: Authentication > Sign-in method > Email/Password, and Firestore Database
@@ -532,7 +502,7 @@ let _fbAuth = null, _fbDb = null;
 })();
 
 // ── storage ────────────────────────────────────────────────────
-const TASK_KEY = 'ft_tasks_v2', SET_KEY = 'ft_settings_v2', STICK_KEY = 'ft_stickers_v1';
+const TASK_KEY = 'ft_tasks_v2', SET_KEY = 'ft_settings_v2';
 const CLASS_KEY = 'ft_classes_v1', ACTIVE_CLS_KEY = 'ft_active_class';
 
 const loadClasses = () => {
@@ -579,17 +549,9 @@ const loadSettings = () => {
   } catch { return { warnAt:35, alertAt:65, pin:'1234', classCode:genClassCode(), className:'My Class' }; }
 };
 const saveSettings = s => { try { localStorage.setItem(SET_KEY, JSON.stringify(s)); } catch {} };
-const loadStickers = () => { try { return JSON.parse(localStorage.getItem(STICK_KEY)) || []; } catch { return []; } };
-const saveStickers = s => { try { localStorage.setItem(STICK_KEY, JSON.stringify(s)); } catch {} };
 const PUPIL_KEY = 'ft_pupil_name';
 const loadPupilName = () => { try { return localStorage.getItem(PUPIL_KEY) || ''; } catch { return ''; } };
 const savePupilName = n => { try { localStorage.setItem(PUPIL_KEY, n); } catch {} };
-const earnSticker = () => {
-  const c = loadStickers();
-  const next = STICKERS[c.length % STICKERS.length];
-  saveStickers([...c, { ...next, earnedAt: Date.now() }]);
-  return next;
-};
 
 // ── file uploads (Cloudflare R2 via /api/upload) ───────────────
 const MAX_UPLOAD = 10 * 1024 * 1024;
@@ -1014,24 +976,6 @@ function HeadingStep({ step }) {
   </div>`;
 }
 
-// ── StickerBook ────────────────────────────────────────────────
-function StickerBook({ onBack }) {
-  const stickers = loadStickers();
-  return html`<div class="sb-screen">
-    <div class="ph" style=${{background:'linear-gradient(135deg,#6366F1,#8B5CF6)',borderBottom:'none'}}>
-      <button class="back" style=${{background:'rgba(255,255,255,.2)',color:'#fff',border:'none'}} onClick=${onBack}>← Back</button>
-      <h1 style=${{color:'#fff'}}>⭐ My Stickers</h1>
-      <span style=${{color:'rgba(255,255,255,.8)',fontWeight:800,fontSize:'.95rem',whiteSpace:'nowrap'}}>${stickers.length} earned</span>
-    </div>
-    <div class="sb-body">
-      ${stickers.length===0?html`<div class="empty"><div class="empty-ico">⭐</div><p class="empty-txt">Finish tasks to earn stickers!</p></div>`:
-      html`<div class="sticker-grid">${stickers.map((s,i)=>html`<div key=${i} class="sticker-cell" style=${{animationDelay:(i*.04)+'s'}}>
-        <div class="sticker-emoji">${s.emoji}</div><div class="sticker-name">${s.name}</div><div class="sticker-num">#${i+1}</div>
-      </div>`)}</div>`}
-    </div>
-  </div>`;
-}
-
 // ── BoardTimer ─────────────────────────────────────────────────
 function BoardTimer({ onExit }) {
   const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
@@ -1080,7 +1024,6 @@ function PupilMode({ task, settings, db, onExit }) {
   const [idx, setIdx] = useState(0);
   const [done, setDone] = useState(false);
   const [stepKey, setStepKey] = useState(0);
-  const [earnedSticker, setEarnedSticker] = useState(null);
   const [showWordBank, setShowWordBank] = useState(false);
   const [helpSent, setHelpSent] = useState(false);
   const [checkinPending, setCheckinPending] = useState(false);
@@ -1096,7 +1039,7 @@ function PupilMode({ task, settings, db, onExit }) {
   const hasVocab = (task.vocab||[]).length > 0;
   const taskFiles = task.files || [];
 
-  const finish = () => { const s=earnSticker(); setEarnedSticker(s); setDone(true); };
+  const finish = () => setDone(true);
 
   const go = dir => {
     const next = idx+dir;
@@ -1139,11 +1082,6 @@ function PupilMode({ task, settings, db, onExit }) {
       <div class="comp-star">⭐</div>
       <h1 class="comp-title">Amazing work${pupilName?', '+pupilName:''}!</h1>
       <p class="comp-sub">You finished — ${task.title}</p>
-      ${earnedSticker?html`<div class="comp-sticker">
-        <div class="comp-sticker-lbl">You earned a sticker!</div>
-        <div class="comp-sticker-emo">${earnedSticker.emoji}</div>
-        <div class="comp-sticker-name">${earnedSticker.name}</div>
-      </div>`:null}
       <div class="star-row">🌟🌟🌟🌟🌟</div>
       ${task.extension?.text?.trim()?(showExtension?html`<div class="comp-extension">
         <div class="comp-ext-lbl">🌟 Bonus challenge</div>
@@ -1986,10 +1924,9 @@ function ClassJoin({ db, initialCode, onLoaded, onBack }) {
 }
 
 // ── Landing ────────────────────────────────────────────────────
-function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
+function Landing({ onTeacher, onPupil, useFirebaseAuth }) {
   const [showPin,setShowPin] = useState(false);
   const settings = loadSettings();
-  const stickers = loadStickers();
   const now = new Date();
   const dayName = now.toLocaleDateString('en-GB',{weekday:'long'});
   const fullDate = now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
@@ -2013,13 +1950,10 @@ function Landing({ onTeacher, onPupil, onStickers, useFirebaseAuth }) {
       <button class="mode-btn" onClick=${onPupil}>
         <img class="m-photo-svg" src="pupils.svg" alt="Pupil"/>
         <span class="m-text"><span class="m-label">I'm a Pupil</span>
-          <span class="m-sub">Start your task${stickers.length>0?html` <span class="stick-badge">⭐ ${stickers.length}</span>`:''}</span>
+          <span class="m-sub">Start your task</span>
         </span>
         <span class="m-arrow">›</span>
       </button>
-    </div>
-    <div class="landing-links">
-      <button class="landing-link" onClick=${onStickers}>⭐ My Stickers${stickers.length>0?' ('+stickers.length+')':''}</button>
     </div>
   </div>`;
 }
@@ -2063,14 +1997,13 @@ function App() {
 
   if (!authReady) return html`<div style=${{display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',color:'var(--muted)',font:'700 1.1rem Nunito,sans-serif'}}>Loading…</div>`;
 
-  if (screen==='stickers')     return html`<${StickerBook} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='boardtimer')   return html`<${BoardTimer} onExit=${()=>setScreen('teacher')}/>`;
   if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onBoardTimer=${()=>setScreen('boardtimer')} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
   if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name,code)=>{setClassTasks(tasks);setClassName(name);setJoinedClassCode(code);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
   if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings({...loadSettings(),classCode:joinedClassCode,className});setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
   if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
-  return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('classjoin')} onStickers=${()=>setScreen('stickers')} useFirebaseAuth=${!!_fbAuth}/>`;
+  return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('classjoin')} useFirebaseAuth=${!!_fbAuth}/>`;
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(html`<${App}/>`);
