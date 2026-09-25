@@ -409,6 +409,9 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .ai-def-btn{padding:8px 12px;border-radius:10px;border:2px solid var(--violet);background:var(--violet-l);color:var(--violet);font:800 .82rem/1 'Nunito',sans-serif;cursor:pointer;white-space:nowrap;min-height:42px;transition:all .13s;flex-shrink:0;}
 .ai-def-btn:active{transform:scale(.95);}
 .ai-def-btn:disabled{opacity:.38;cursor:not-allowed;}
+textarea.finput{resize:vertical;min-height:110px;font-weight:600;}
+.ai-plan-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px;}
+.ai-choice{margin-top:12px;padding:12px;border-radius:14px;background:var(--violet-l);border:2px solid var(--violet);display:flex;flex-direction:column;gap:10px;font-weight:800;color:var(--violet);}
 
 @media (min-width:580px){
   .mode-btns{flex-direction:row;}
@@ -622,6 +625,18 @@ async function uploadTaskFile(file) {
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Upload failed (' + res.status + ').');
   return { id: genId(), name: data.name, kind: data.kind, url: data.url, size: data.size };
+}
+
+// Ask the AI (via /api/chunk) to break a lesson plan into pupil steps.
+async function aiChunkLesson(text, yearGroup, subject) {
+  const user = _fbAuth && _fbAuth.currentUser;
+  if (!user) throw new Error('Sign in with your teacher account to use AI.');
+  let res;
+  try { res = await fetch('/api/chunk', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() }, body: JSON.stringify({ text, yearGroup, subject }) }); }
+  catch { throw new Error('Could not reach the AI — check your connection and try again.'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'AI request failed (' + res.status + ').');
+  return data;
 }
 
 // ── audio ──────────────────────────────────────────────────────
@@ -1190,6 +1205,40 @@ function TaskEditor({ init, onSave, onCancel }) {
   const upVocab=(i,k,v)=>setTask(t=>({...t,vocab:(t.vocab||[]).map((item,j)=>j===i?{...item,[k]:v}:item)}));
   const [uploading, setUploading] = useState(0);
   const [uploadErr, setUploadErr] = useState('');
+  const [planText, setPlanText] = useState('');
+  const [planYear, setPlanYear] = useState('');
+  const [planBusy, setPlanBusy] = useState(false);
+  const [planErr, setPlanErr] = useState('');
+  const [planDraft, setPlanDraft] = useState(null);
+  const [planDone, setPlanDone] = useState('');
+  const isFixedStep = st => st.type==='copy_title'||st.type==='copy_title_full'||st.type==='file';
+  const hasContentSteps = task.steps.some(st=>!isFixedStep(st));
+  const buildFromPlan = async () => {
+    setPlanErr(''); setPlanDone(''); setPlanDraft(null); setPlanBusy(true);
+    try {
+      const d = await aiChunkLesson(planText, planYear.trim(), SUBJECTS.find(x=>x.id===task.subject)?.label||'');
+      if (hasContentSteps) setPlanDraft(d); else applyPlan(d, 'replace');
+    } catch(e) { setPlanErr(e.message); }
+    setPlanBusy(false);
+  };
+  const applyPlan = (d, mode) => {
+    const fresh = d.steps.map(st=>({ id:genId(), ...st }));
+    setTask(t=>{
+      const keep = mode==='replace' ? t.steps.filter(isFixedStep) : t.steps;
+      // new steps go after the copy-title step(s) when replacing, at the end when adding
+      const lead = keep.filter(st=>st.type==='copy_title'||st.type==='copy_title_full');
+      const rest = keep.filter(st=>!(st.type==='copy_title'||st.type==='copy_title_full'));
+      const steps = mode==='replace' ? [...lead, ...fresh, ...rest] : [...keep, ...fresh];
+      const have = new Set((t.vocab||[]).map(v=>(v.word||'').trim().toLowerCase()));
+      const vocab = [...(t.vocab||[]), ...d.vocab.filter(v=>!have.has(v.word.toLowerCase())).map(v=>({ id:genId(), ...v }))];
+      return { ...t, steps, vocab,
+        title: t.title.trim() ? t.title : (d.title||''),
+        timerMins: t.timerMins ? t.timerMins : (d.timerMins||0),
+        extension: (t.extension?.text||'').trim() ? t.extension : { text:d.extension?.text||'', detail:d.extension?.detail||'' } };
+    });
+    setPlanDraft(null);
+    setPlanDone('✅ Added '+fresh.length+' steps below — have a look through and change anything you like.');
+  };
   const addFiles = async fileList => {
     setUploadErr('');
     for (const f of Array.from(fileList)) {
@@ -1226,6 +1275,25 @@ function TaskEditor({ init, onSave, onCancel }) {
   return html`<div class="ed-screen">
     <div class="ph"><button class="back" onClick=${onCancel}>← Back</button><h1>${init?'Edit Task':'✨ New Task'}</h1></div>
     <div class="ed-body">
+      <div class="fcard">
+        <label class="flabel">✨ Build steps from a lesson plan (optional)</label>
+        <p style=${{color:'var(--faint)',fontSize:'.82rem',margin:'0 0 10px',fontWeight:600}}>Paste your lesson plan or a paragraph about the lesson. AI will break it into short steps for pupils, plus a word bank and an extension task. You can edit everything afterwards.</p>
+        <textarea class="finput" rows="6" value=${planText} placeholder="e.g. Pupils read the opening of The Iron Man, then discuss how Hughes builds tension. They pick out powerful verbs and write a paragraph describing the Iron Man's arrival…" onInput=${e=>setPlanText(e.target.value)}></textarea>
+        <div class="ai-plan-row">
+          <input class="finput" style=${{maxWidth:'190px'}} type="text" value=${planYear} placeholder="Year group (optional)" onInput=${e=>setPlanYear(e.target.value)}/>
+          <button class="ai-def-btn" disabled=${planBusy||planText.trim().length<20} onClick=${buildFromPlan}>${planBusy?'⏳ Thinking…':'✨ Create steps'}</button>
+        </div>
+        ${planErr?html`<div class="up-err">⚠️ ${planErr}</div>`:null}
+        ${planDone?html`<p style=${{color:'var(--green,#059669)',fontWeight:800,fontSize:'.88rem',margin:'10px 0 0'}}>${planDone}</p>`:null}
+        ${planDraft?html`<div class="ai-choice">
+          <span>The AI made ${planDraft.steps.length} steps. You already have steps — what should I do?</span>
+          <div style=${{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+            <button class="btn btn-primary" onClick=${()=>applyPlan(planDraft,'replace')}>Replace my steps</button>
+            <button class="btn btn-secondary" onClick=${()=>applyPlan(planDraft,'add')}>Add to the end</button>
+            <button class="btn btn-ghost" onClick=${()=>setPlanDraft(null)}>Discard</button>
+          </div>
+        </div>`:null}
+      </div>
       <div class="fcard">
         <label class="flabel">Subject</label>
         <div class="chips">${SUBJECTS.map(s=>html`<button key=${s.id} class=${'chip'+(task.subject===s.id?' sel':'')} style=${{'--cc':s.col}} onClick=${()=>up('subject',s.id)}>${s.emoji} ${s.label}</button>`)}</div>
