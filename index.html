@@ -130,6 +130,8 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .tasks-hdr-code{font:700 .82rem 'Nunito',sans-serif;color:var(--faint);margin:0;}
 .tasks-hdr-code strong{color:var(--text);}
 .task-filters{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:14px 0;}
+.task-search{display:flex;gap:8px;align-items:center;margin-top:14px;}
+.task-search .finput{flex:1;}
 .date-filter{padding:8px 12px;border-radius:10px;border:2px solid var(--border);background:var(--surface);color:var(--text);font:700 .85rem 'Nunito',sans-serif;outline:none;cursor:pointer;}
 .archived-block{margin-top:18px;}
 .archived-list{display:flex;flex-direction:column;gap:6px;margin-top:10px;}
@@ -1466,6 +1468,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   const [showArchived, setShowArchived] = useState(false);
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDate, setFilterDate] = useState('all');
+  const [search, setSearch] = useState('');
   const [newClassName, setNewClassName] = useState('');
   const [publishState, setPublishState] = useState('idle');
   const [helpNames, setHelpNames]   = useState({});
@@ -1688,8 +1691,16 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
 
   const archivedTasks = tasks.filter(t=>t.archived);
   const today = todayISO();
+  const q = search.trim().toLowerCase();
+  const matchesSearch = t => !q || [
+    t.title, SUBJECTS.find(x=>x.id===t.subject)?.label,
+    ...(t.steps||[]).flatMap(st=>[st.text,st.detail]),
+    ...(t.vocab||[]).map(v=>v.word),
+    t.extension?.text,
+  ].some(v=>v && String(v).toLowerCase().includes(q));
   const visibleTasks = tasks.filter(t=>{
     if (t.archived) return false;
+    if (!matchesSearch(t)) return false;
     if (filterSubject!=='all' && t.subject!==filterSubject) return false;
     if (filterDate==='today' && t.date!==today) return false;
     if (filterDate==='upcoming' && t.date<today) return false;
@@ -1776,7 +1787,11 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
       </div>
 
       <!-- FILTERS -->
-      ${tasks.length>0?html`<div class="task-filters">
+      ${tasks.length>0?html`<div class="task-search">
+        <input class="finput" type="search" value=${search} placeholder="🔍 Search tasks by title, subject, steps or words…" onInput=${e=>setSearch(e.target.value)}/>
+        ${search?html`<button class="btn btn-ghost" style=${{padding:'6px 12px',minHeight:'38px'}} onClick=${()=>setSearch('')}>✕ Clear</button>`:null}
+      </div>
+      <div class="task-filters">
         <div class="chips">
           <button class=${'chip'+(filterSubject==='all'?' sel':'')} onClick=${()=>setFilterSubject('all')}>All subjects</button>
           ${SUBJECTS.map(s=>html`<button key=${s.id} class=${'chip'+(filterSubject===s.id?' sel':'')} style=${{'--cc':s.col}} onClick=${()=>setFilterSubject(s.id)}>${s.emoji} ${s.label}</button>`)}
@@ -1790,7 +1805,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
       </div>`:null}
 
       ${tasks.length===0?html`<div class="empty"><div class="empty-ico">📝</div><p class="empty-txt">No tasks for ${activeCls.name} yet — create your first one!</p></div>`:
-      visibleTasks.length===0?html`<div class="empty"><div class="empty-ico">🔍</div><p class="empty-txt">No tasks match this filter</p></div>`:
+      visibleTasks.length===0?html`<div class="empty"><div class="empty-ico">🔍</div><p class="empty-txt">No tasks match your search or filters</p></div>`:
       html`<div class="task-grid">${visibleTasks.map(task=>{
         const s=SUBJECTS.find(x=>x.id===task.subject)||SUBJECTS[7];
         return html`<div key=${task.id} class="task-card" style=${{'--cc':s.col}}>
