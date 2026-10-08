@@ -741,18 +741,21 @@ function useNoise() {
     } catch {}
     setPerm('requesting');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: { autoGainControl: false, noiseSuppression: false, echoCancellation: false } });
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 512; analyser.smoothingTimeConstant = 0.88;
       ctx.createMediaStreamSource(stream).connect(analyser);
       streamRef.current = stream; ctxRef.current = ctx; setPerm('granted');
       const buf = new Uint8Array(analyser.frequencyBinCount);
+      let smooth = 0;
       const tick = () => {
         analyser.getByteFrequencyData(buf);
         const rms = Math.sqrt(buf.reduce((s, v) => s + v * v, 0) / buf.length);
-        const noise = Math.max(0, rms - 26); // ignore background hiss below threshold
-        setLevel(Math.min(100, Math.round(noise * 2.2)));
+        const noise = Math.max(0, rms - 26) * 2.2; // ignore background hiss below threshold
+        // rise slowly (~2s) so one cough or scraped chair doesn't trip it; fall faster (~0.5s)
+        smooth += (noise - smooth) * (noise > smooth ? 0.008 : 0.035);
+        setLevel(Math.round(smooth));
         rafRef.current = requestAnimationFrame(tick);
       };
       tick();
@@ -821,7 +824,8 @@ function Confetti() {
 
 // ── NoiseMeter ─────────────────────────────────────────────────
 function NoiseMeter({ level, perm, settings, onStart, onRetry }) {
-  const { warnAt=35, alertAt=65 } = settings;
+  const { warnAt=35, alertAt=65, sensitivity=5 } = settings;
+  level = Math.min(100, Math.round(level * sensitivity / 5));
   if (perm==='unsupported') return html`<div class="n-btn" style=${{cursor:'default'}}>🎤 No mic found</div>`;
   if (perm==='denied') return html`<div style=${{display:'flex',flexDirection:'column',gap:'5px',alignItems:'flex-start'}}>
     <button class="n-btn" onClick=${()=>{onRetry();setTimeout(onStart,50);}} style=${{alignSelf:'stretch',justifyContent:'center'}}>🔄 Retry mic</button>
@@ -2222,6 +2226,10 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
         <div class="srow">
           <label>Alert level: ${settings.alertAt}%</label>
           <input type="range" min="30" max="95" value=${settings.alertAt} onInput=${e=>updSet({alertAt:+e.target.value})}/>
+        </div>
+        <div class="srow">
+          <label>Sensitivity: ${settings.sensitivity ?? 5} / 10</label>
+          <input type="range" min="1" max="10" value=${settings.sensitivity ?? 5} onInput=${e=>updSet({sensitivity:+e.target.value})}/>
         </div>
       </div>`:null}
 
