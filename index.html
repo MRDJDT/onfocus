@@ -435,6 +435,99 @@ textarea.finput{resize:vertical;min-height:110px;font-weight:600;}
 .new-class-row{display:flex;gap:8px;}
 .new-class-row input{flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 .9rem 'Nunito',sans-serif;outline:none;}
 .new-class-row input:focus{border-color:var(--blue);}
+/* BOARD MODE — teacher display for the class board */
+.bd-screen{position:fixed;inset:0;z-index:290;background:var(--bg);display:flex;flex-direction:column;overflow:hidden;}
+.bd-top{display:flex;align-items:center;gap:14px;padding:14px 22px;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--sh);flex-wrap:wrap;}
+.bd-top .pu-badge{font-size:1.05rem;padding:6px 16px;}
+.bd-title{font-family:'Fredoka One',cursive;font-size:clamp(1.4rem,2.6vw,2.4rem);color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bd-code{display:flex;flex-direction:column;align-items:center;line-height:1.1;padding:6px 14px;border-radius:12px;background:var(--violet-l);color:var(--violet);}
+.bd-code small{font-size:.7rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;}
+.bd-code strong{font-family:'Fredoka One',cursive;font-size:1.5rem;letter-spacing:.12em;}
+.bd-noise{min-width:280px;}
+.bd-tools{display:flex;gap:8px;}
+.bd-tools .icon-btn{width:46px;height:46px;font-size:1.25rem;}
+.bd-tools .icon-btn.on{background:var(--violet-l);}
+.bd-main{flex:1;display:flex;min-height:0;}
+.bd-stage{flex:1;display:flex;flex-direction:column;padding:24px 32px;min-width:0;overflow-y:auto;animation:slideRight .32s ease both;}
+.bd-stage .inst-step,.bd-stage .copy-step{max-width:min(1100px,92%);}
+.bd-stage .step-big-icon{font-size:clamp(5rem,11vh,9rem);}
+.bd-stage .step-type-lbl{font-size:1.1rem;padding:7px 20px;}
+.bd-stage .step-main{font-size:clamp(2.2rem,5vw,4.4rem);}
+.bd-stage .step-detail{font-size:clamp(1.3rem,2.3vw,2.1rem);max-width:none;}
+.bd-stage .copy-hdr-text{font-size:clamp(1.5rem,2.6vw,2.4rem);}
+.bd-stage .clt{font-size:clamp(1.8rem,3.4vw,3rem)!important;}
+.bd-stage .lined-paper{padding-left:90px;gap:18px;}
+.bd-stage .lined-paper::before{background:repeating-linear-gradient(transparent,transparent 51px,#BFDBFE 51px,#BFDBFE 52px);}
+.bd-stage .lined-paper::after{left:70px;}
+.bd-stage .copy-done{font-size:clamp(1.1rem,1.8vw,1.6rem);}
+.bd-stage .file-step-cap{font-size:clamp(1.6rem,3vw,2.8rem);}
+.bd-stage .file-step-view,.bd-stage .file-step-view img{max-height:62vh;}
+.bd-stage .file-step-pdf{height:62vh;}
+.bd-end{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:22px;}
+.bd-end-star{font-size:clamp(5rem,12vh,9rem);animation:spinStar .7s ease both;}
+.bd-end h2{font-family:'Fredoka One',cursive;font-size:clamp(2.4rem,5vw,4.4rem);color:var(--text);}
+.bd-end p{font-size:clamp(1.3rem,2.3vw,2rem);font-weight:700;color:var(--muted);max-width:900px;text-wrap:balance;}
+.bd-ext{background:var(--surface);border:3px solid var(--gold);border-radius:20px;padding:22px 30px;max-width:1000px;box-shadow:var(--sh);}
+.bd-ext-lbl{font-size:1.05rem;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:#A16207;margin-bottom:8px;}
+.bd-ext-text{font-family:'Fredoka One',cursive;font-size:clamp(1.7rem,3vw,2.8rem);color:var(--text);text-wrap:balance;}
+.bd-ext-detail{font-size:clamp(1.1rem,1.8vw,1.6rem);font-weight:700;color:var(--muted);margin-top:8px;}
+.bd-side{width:clamp(260px,24vw,380px);flex-shrink:0;border-left:1px solid var(--border);background:var(--surface);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;}
+.bd-side h3{font-family:'Fredoka One',cursive;font-size:1.3rem;color:var(--text);margin-bottom:4px;}
+.bd-si{display:flex;align-items:flex-start;gap:10px;text-align:left;padding:10px 12px;border-radius:12px;border:2px solid transparent;background:var(--bg);color:var(--text);font:700 1.05rem/1.35 'Nunito',sans-serif;cursor:pointer;width:100%;}
+.bd-si.cur{border-color:var(--blue);background:var(--blue-l);}
+.bd-si.done{opacity:.55;}
+.bd-si-n{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:900;}
+.bd-si.cur .bd-si-n{background:var(--blue);color:#fff;}
+.bd-si{position:relative;overflow:hidden;}
+.bd-si>span{position:relative;}
+.bd-si-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(34,197,94,.16);transition:width .5s ease;pointer-events:none;}
+.bd-si-txt{flex:1;}
+.bd-si-c{flex-shrink:0;min-width:34px;height:26px;padding:0 8px;border-radius:999px;background:var(--green);color:#fff;font-size:.85rem;font-weight:900;display:flex;align-items:center;justify-content:center;gap:3px;}
+.bd-prog{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bd-prog-pill{font-size:.95rem;font-weight:900;padding:6px 12px;border-radius:999px;background:var(--surface);border:2px solid var(--border);color:var(--text);white-space:nowrap;}
+.bd-prog-pill.done{border-color:var(--green);color:#15803D;}
+.bd-nav{display:flex;align-items:center;gap:16px;padding:14px 22px;background:var(--surface);border-top:1px solid var(--border);}
+.bd-nav .btn{font-size:1.25rem;min-height:60px;padding:14px 30px;}
+.bd-nav .step-dots{flex:1;justify-content:center;}
+.bd-count{font-family:'Fredoka One',cursive;font-size:1.4rem;color:var(--muted);white-space:nowrap;}
+.bd-keys{font-size:.78rem;font-weight:700;color:var(--faint);white-space:nowrap;}
+.bd-main{position:relative;}
+.bd-code{cursor:pointer;border:none;font-family:inherit;}
+.bd-code:hover{filter:brightness(.96);}
+.bd-tools .icon-btn.lead{background:var(--green-l);}
+.bd-lead-pill{font-size:.78rem;font-weight:900;padding:5px 10px;border-radius:999px;background:var(--green-l);color:#15803D;white-space:nowrap;}
+.bd-timer-row{display:flex;align-items:center;gap:8px;padding:9px 22px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.bd-timer-row .timer-chip{font-size:1rem;padding:8px 16px;}
+.bd-timer-row .btn{min-height:40px;padding:8px 16px;font-size:.95rem;}
+.bd-ring{display:block;}
+.bd-ring text{font-family:'Fredoka One',cursive;}
+.bd-tm-float{position:absolute;left:24px;bottom:20px;z-index:5;background:var(--surface);border-radius:24px;box-shadow:var(--sh-lg);padding:12px;border:none;cursor:pointer;transition:transform .3s;}
+.bd-tm-float .bd-ring{width:clamp(150px,19vh,230px);height:auto;}
+.bd-tm-float.ending{animation:timerPulse 1s ease-in-out infinite;box-shadow:0 0 0 6px rgba(239,68,68,.35),var(--sh-lg);}
+.bd-full{position:fixed;inset:0;z-index:350;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;text-align:center;animation:fadeIn .2s ease both;cursor:pointer;}
+.bd-full-timer{background:var(--bg);}
+.bd-full-timer .bd-ring{width:min(78vh,80vw);height:auto;}
+.bd-full-hint{font-size:1.1rem;font-weight:800;color:var(--faint);}
+.bd-full-up{background:linear-gradient(150deg,#F97316,#EF4444);color:#fff;}
+.bd-full-up .bd-big-emoji{font-size:22vh;line-height:1;animation:wiggle .6s ease 3;}
+.bd-full h2{font-family:'Fredoka One',cursive;font-size:clamp(3rem,11vw,9rem);line-height:1.05;}
+.bd-full p{font-size:clamp(1.3rem,3vw,2.6rem);font-weight:800;opacity:.9;}
+.bd-full .btn{font-size:1.3rem;min-height:60px;padding:14px 32px;}
+.bd-full-qr{background:var(--surface);cursor:default;}
+.bd-full-qr img{width:min(62vh,70vw);height:auto;border-radius:20px;box-shadow:var(--sh-lg);}
+.bd-full-qr .bd-qr-code{font-family:'Fredoka One',cursive;font-size:clamp(3rem,9vh,6rem);letter-spacing:.15em;color:var(--violet);line-height:1;}
+.bd-full-qr .bd-qr-url{font-size:clamp(1rem,2.2vh,1.5rem);font-weight:800;color:var(--muted);word-break:break-all;}
+.attn-full{position:fixed;inset:0;z-index:1000;background:linear-gradient(150deg,#4F46E5,#7C3AED);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2vh;text-align:center;padding:24px;animation:fadeIn .2s ease both;}
+.attn-full .attn-hand{font-size:clamp(6rem,24vh,16rem);line-height:1;animation:wiggle .8s ease 2;}
+.attn-full h2{font-family:'Fredoka One',cursive;font-size:clamp(2.6rem,10vw,8rem);line-height:1.05;}
+.attn-full p{font-size:clamp(1.2rem,3.4vw,2.8rem);font-weight:800;opacity:.92;}
+.attn-full .btn{margin-top:2vh;background:rgba(255,255,255,.2);color:#fff;border:2px solid rgba(255,255,255,.4);font-size:1.2rem;}
+.follow-banner{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:var(--green-l);color:#15803D;border-bottom:2px solid var(--green);padding:7px 14px;font:800 .85rem/1.3 'Nunito',sans-serif;text-align:center;}
+.follow-banner.other{background:var(--violet-l);color:var(--violet);border-color:var(--violet);}
+.follow-banner button{font:800 .82rem 'Nunito',sans-serif;padding:5px 12px;border-radius:999px;border:none;background:var(--violet);color:#fff;cursor:pointer;}
+.ps-onboard{position:absolute;top:8px;right:8px;font-size:.68rem;font-weight:900;padding:3px 8px;border-radius:999px;background:#22C55E;color:#fff;}
+.ps-card.onboard{box-shadow:0 0 0 4px #22C55E,0 6px 24px rgba(0,0,0,.14);}
+@media (max-width:900px){.bd-side{display:none;}.bd-keys{display:none;}.bd-noise{min-width:0;flex-basis:100%;}}
 </style>
 
 <div id="root"></div>
@@ -555,6 +648,16 @@ const saveSettings = s => { try { localStorage.setItem(SET_KEY, JSON.stringify(s
 const PUPIL_KEY = 'ft_pupil_name';
 const loadPupilName = () => { try { return localStorage.getItem(PUPIL_KEY) || ''; } catch { return ''; } };
 const savePupilName = n => { try { localStorage.setItem(PUPIL_KEY, n); } catch {} };
+// Anonymous per-device id for live progress on the teacher's board (no names sent)
+const deviceId = () => {
+  try {
+    let id = localStorage.getItem('ft_device_id');
+    if (!id) { id = Math.random().toString(36).slice(2, 12); localStorage.setItem('ft_device_id', id); }
+    return id;
+  } catch { return 'anon'; }
+};
+const progressDoc = (db, code) => db.doc('checkins/' + code + '_progress');
+const PROGRESS_TTL = 2 * 60 * 60 * 1000;
 
 // ── file uploads (Cloudflare R2 via /api/upload) ───────────────
 const MAX_UPLOAD = 10 * 1024 * 1024;
@@ -963,7 +1066,7 @@ function HeadingStep({ step }) {
 }
 
 // ── PupilMode ──────────────────────────────────────────────────
-function PupilMode({ task, settings, db, onExit, preview }) {
+function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSwitchTask }) {
   const [pupilName, setPupilName] = useState(() => preview ? 'Sample Pupil' : loadPupilName());
   const [showNameEntry, setShowNameEntry] = useState(() => !preview && !loadPupilName());
   const [idx, setIdx] = useState(0);
@@ -984,6 +1087,28 @@ function PupilMode({ task, settings, db, onExit, preview }) {
   const taskFiles = task.files || [];
 
   const finish = () => setDone(true);
+
+  // Report which step this device is on, so the board can show class progress (anonymous)
+  useEffect(()=>{
+    if (preview || !db || !settings?.classCode) return;
+    progressDoc(db, settings.classCode).set({p:{[deviceId()]:{t:task.id, i:done?totalSteps:idx, at:Date.now()}}},{merge:true}).catch(()=>{});
+  },[idx, done]);
+  useEffect(()=>()=>{
+    if (preview || !db || !settings?.classCode) return;
+    progressDoc(db, settings.classCode).set({p:{[deviceId()]:{t:null, i:0, at:Date.now()}}},{merge:true}).catch(()=>{});
+  },[]);
+
+  // Teacher-led mode: jump to whichever step the teacher moves the board to
+  const following = !preview && !!board?.active && board.taskId === task.id;
+  const lastBoardIdx = useRef(null);
+  useEffect(()=>{
+    if (!following) { lastBoardIdx.current = null; return; }
+    if (lastBoardIdx.current === board.idx) return;
+    lastBoardIdx.current = board.idx;
+    if (board.idx >= totalSteps) { if (!done) setCheckinPending(true); return; }
+    setDone(false); setCheckinPending(false);
+    setIdx(Math.max(0, board.idx)); setStepKey(k=>k+1);
+  },[following, board?.idx]);
 
   const go = dir => {
     const next = idx+dir;
@@ -1037,6 +1162,8 @@ function PupilMode({ task, settings, db, onExit, preview }) {
 
   return html`<div class="pu-screen">
     ${preview?html`<div class="pv-banner">👁️ Preview — this is what pupils will see. Nothing is saved or sent.</div>`:null}
+    ${following?html`<div class="follow-banner">📺 Following your teacher's board</div>`
+      :boardTask&&boardTask.id!==task.id&&onSwitchTask?html`<div class="follow-banner other">📺 Your teacher is showing <strong>${boardTask.title}</strong><button onClick=${()=>onSwitchTask(boardTask)}>Go there →</button></div>`:null}
     ${checkinPending?html`<${CheckIn} onDone=${resolveCheckin}/>`:null}
     ${showWordBank?html`<${WordBankPanel} vocab=${task.vocab||[]} onClose=${()=>setShowWordBank(false)}/>`:null}
     ${showFiles?html`<${FilesPanel} files=${taskFiles} onOpen=${f=>{setShowFiles(false);setViewFile(f);}} onClose=${()=>setShowFiles(false)}/>`:null}
@@ -1067,6 +1194,249 @@ function PupilMode({ task, settings, db, onExit, preview }) {
       <button class="btn btn-secondary" onClick=${()=>go(-1)} disabled=${idx===0}>← Back</button>
       <div class="step-dots">${task.steps.map((_,i)=>html`<div key=${i} class=${'sdot'+(i===idx?' cur':i<idx?' done':'')}></div>`)}</div>
       <button class="btn btn-primary" onClick=${()=>go(1)}>${idx<totalSteps-1?'Next →':'✅ Finish!'}</button>
+    </div>
+  </div>`;
+}
+
+// ── BoardMode — teacher display for the class board ────────────
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [784, 988, 1319].forEach((f, i) => {
+      const t = ctx.currentTime + i * 0.28, o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 1.1);
+      o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + 1.2);
+    });
+    setTimeout(() => ctx.close().catch(()=>{}), 2500);
+  } catch {}
+}
+
+function TimerRing({ total, remaining }) {
+  const CIRC = 251.33;
+  const pct = total>0 ? remaining/total : 1;
+  const col = pct<0.25?'#EF4444':pct<0.5?'#F59E0B':'#3B82F6';
+  const timeStr = Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+  return html`<svg class="bd-ring" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="40" fill="none" stroke="var(--border)" strokeWidth="7"/>
+    <circle cx="50" cy="50" r="40" fill="none" stroke=${col} strokeWidth="7" strokeDasharray=${CIRC} strokeDashoffset=${CIRC*(1-pct)}
+      strokeLinecap="round" transform="rotate(-90 50 50)" style=${{transition:'stroke-dashoffset 1s linear,stroke .5s'}}/>
+    <text x="50" y="51" textAnchor="middle" dominantBaseline="middle" fontSize=${timeStr.length>4?19:22} fill="var(--text)">${timeStr}</text>
+  </svg>`;
+}
+
+function AttentionScreen({ sub, onClose }) {
+  return html`<div class="attn-full" onClick=${onClose}>
+    <div class="attn-hand">✋</div>
+    <h2>Pens down</h2>
+    <p>${sub}</p>
+    ${onClose?html`<button class="btn" onClick=${onClose}>Carry on ▶</button>`:null}
+  </div>`;
+}
+
+function BoardMode({ task, cls, settings, noise, db, onExit }) {
+  const [idx, setIdx] = useState(0);
+  const [showSteps, setShowSteps] = useState(true);
+  const [showWordBank, setShowWordBank] = useState(false);
+  const [viewFile, setViewFile] = useState(null);
+  const [isFull, setIsFull] = useState(!!document.fullscreenElement);
+  const [showQR, setShowQR] = useState(false);
+  const [qrData, setQrData] = useState('');
+  const [attention, setAttention] = useState(false);
+  const [bigTimer, setBigTimer] = useState(false);
+  const [progress, setProgress] = useState({});
+  const [showProgress, setShowProgress] = useState(true);
+  const canSync = !!(db && cls?.code);
+  const [lead, setLead] = useState(canSync);
+  const { timerState, total, remaining, startTimer, pauseTimer, resetTimer } = useTimer();
+  const subj = SUBJECTS.find(s=>s.id===task.subject)||SUBJECTS[7];
+  const steps = task.steps || [];
+  const totalSteps = steps.length;
+  const atEnd = idx >= totalSteps;
+  const step = steps[idx];
+  const vocab = task.vocab || [];
+  const taskFiles = task.files || [];
+  const ext = task.extension?.text?.trim() ? task.extension : null;
+  const timerOn = timerState==='running' || timerState==='paused';
+  const quickMins = [...new Set([1,2,5,10,...(task.timerMins>0?[task.timerMins]:[])])].sort((a,b)=>a-b);
+
+  const goTo = i => setIdx(Math.max(0, Math.min(totalSteps, i)));
+  const toggleFull = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(()=>{});
+    else document.documentElement.requestFullscreen?.().catch(()=>{});
+  };
+
+  useEffect(()=>{
+    const onFs = () => setIsFull(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFs);
+    return ()=>{
+      document.removeEventListener('fullscreenchange', onFs);
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(()=>{});
+    };
+  },[]);
+
+  // Share the board's position with pupils' devices via the public class doc
+  useEffect(()=>{
+    if (!canSync) return;
+    db.doc('classes/'+cls.code).set({board:{active:lead, taskId:task.id, idx, attention, updatedAt:Date.now()}},{merge:true}).catch(()=>{});
+  },[canSync, lead, idx, attention]);
+  useEffect(()=>()=>{
+    if (canSync) db.doc('classes/'+cls.code).set({board:{active:false, attention:false, updatedAt:Date.now()}},{merge:true}).catch(()=>{});
+  },[]);
+
+  useEffect(()=>{ if (timerState==='done') { setBigTimer(false); playChime(); } },[timerState]);
+
+  // Live, anonymous progress from pupils' devices
+  useEffect(()=>{
+    if (!canSync) return;
+    const ref = progressDoc(db, cls.code);
+    if (typeof ref.onSnapshot !== 'function') return;
+    // Drop devices from earlier lessons so the doc doesn't grow forever
+    ref.get().then(snap=>{
+      if (!snap.exists) return;
+      const all = snap.data().p || {}, cutoff = Date.now() - PROGRESS_TTL;
+      const keep = Object.fromEntries(Object.entries(all).filter(([,v])=>v && v.t && v.at > cutoff));
+      if (Object.keys(keep).length < Object.keys(all).length) ref.set({p:keep}).catch(()=>{});
+    }).catch(()=>{});
+    return ref.onSnapshot(snap=>setProgress(snap.exists ? (snap.data().p||{}) : {}), ()=>{});
+  },[canSync]);
+  const cutoff = Date.now() - PROGRESS_TTL;
+  const onTask = Object.values(progress).filter(v=>v && v.t===task.id && v.at>cutoff);
+  const perStep = Array(totalSteps+1).fill(0);
+  onTask.forEach(v=>{ perStep[Math.max(0, Math.min(totalSteps, v.i|0))]++; });
+  const atOrPast = onTask.filter(v=>(v.i|0)>=idx).length;
+  const finishedCount = perStep[totalSteps];
+  const showProg = canSync && showProgress && onTask.length>0;
+
+  useEffect(()=>{
+    if (!showQR || qrData || !cls?.code) return;
+    import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')
+      .then(mod => mod.toDataURL(joinUrl(cls.code),{width:900,margin:2,color:{dark:'#1E1B4B',light:'#ffffff'}}))
+      .then(setQrData).catch(()=>{});
+  },[showQR]);
+
+  const overlayOpen = viewFile || showWordBank || showQR || attention || bigTimer || timerState==='done';
+  const closeOverlays = () => {
+    setViewFile(null); setShowWordBank(false); setShowQR(false); setAttention(false); setBigTimer(false);
+    if (timerState==='done') resetTimer();
+  };
+
+  // Keyboard + presentation clicker (they send arrows / PageUp / PageDown)
+  useEffect(()=>{
+    const onKey = e => {
+      if (e.target.closest?.('input,textarea,select')) return;
+      const k = e.key.length===1 ? e.key.toLowerCase() : e.key;
+      if (k==='a') { setAttention(v=>!v); return; }
+      if (overlayOpen) {
+        if (k==='Escape') closeOverlays();
+        else if (k==='t' && bigTimer) setBigTimer(false);
+        else if (k==='q' && showQR) setShowQR(false);
+        return;
+      }
+      if (k==='ArrowRight'||k==='PageDown'||k===' ') { e.preventDefault(); setIdx(i=>Math.min(totalSteps,i+1)); }
+      else if (k==='ArrowLeft'||k==='PageUp') { e.preventDefault(); setIdx(i=>Math.max(0,i-1)); }
+      else if (k==='Home') setIdx(0);
+      else if (k==='End') setIdx(totalSteps);
+      else if (k==='f') toggleFull();
+      else if (k==='w' && vocab.length) setShowWordBank(true);
+      else if (k==='s') setShowSteps(v=>!v);
+      else if (k==='p' && canSync) setShowProgress(v=>!v);
+      else if (k==='q' && cls?.code) setShowQR(true);
+      else if (k==='t' && timerOn) setBigTimer(true);
+      else if (k==='Escape' && !document.fullscreenElement) onExit();
+    };
+    window.addEventListener('keydown', onKey);
+    return ()=>window.removeEventListener('keydown', onKey);
+  },[totalSteps, overlayOpen, bigTimer, showQR, timerOn, timerState, vocab.length, onExit]);
+
+  const stepLabel = st => st.type==='copy_title'?'Date and title':st.type==='copy_title_full'?'Name, class, date and title':(st.text||(st.type==='file'?'Look at the file':'Step'));
+
+  return html`<div class="bd-screen">
+    ${showWordBank?html`<${WordBankPanel} vocab=${vocab} onClose=${()=>setShowWordBank(false)}/>`:null}
+    ${viewFile?html`<${FileViewer} file=${viewFile} onClose=${()=>setViewFile(null)}/>`:null}
+    ${attention?html`<${AttentionScreen} sub="Eyes on the board" onClose=${()=>setAttention(false)}/>`:null}
+    ${showQR?html`<div class="bd-full bd-full-qr" onClick=${()=>setShowQR(false)}>
+      <p style=${{color:'var(--text)'}}>📱 Scan to join ${cls.name}</p>
+      ${qrData?html`<img src=${qrData} alt="QR code to join the class"/>`:html`<div style=${{height:'50vh',display:'flex',alignItems:'center',color:'var(--faint)',fontWeight:800}}>Generating…</div>`}
+      <div class="bd-qr-code">${cls.code}</div>
+      <div class="bd-qr-url">${joinUrl(cls.code)}</div>
+      <div class="bd-full-hint">Click anywhere or press Q to close</div>
+    </div>`:null}
+    ${bigTimer&&timerOn?html`<div class="bd-full bd-full-timer" onClick=${()=>setBigTimer(false)}>
+      <${TimerRing} total=${total} remaining=${remaining}/>
+      <div class="bd-full-hint">${timerState==='paused'?'⏸ Paused · ':''}Click or press T to shrink</div>
+    </div>`:null}
+    ${timerState==='done'?html`<div class="bd-full bd-full-up" onClick=${resetTimer}>
+      <div class="bd-big-emoji">⏰</div>
+      <h2>Time's up!</h2>
+      <button class="btn btn-secondary" onClick=${resetTimer}>OK</button>
+    </div>`:null}
+    <div class="bd-top">
+      <span class="pu-badge" style=${{background:subj.light,color:subj.dark}}>${subj.emoji} ${subj.label}</span>
+      <span class="bd-title">${task.title}</span>
+      ${cls?.code?html`<button class="bd-code" title="Show QR code (Q)" onClick=${()=>setShowQR(true)}><small>Join code · tap for QR</small><strong>${cls.code}</strong></button>`:null}
+      <div class="bd-noise"><${NoiseMeter} level=${noise.level} perm=${noise.perm} settings=${settings} onStart=${noise.start} onRetry=${noise.retry}/></div>
+      <div class="bd-tools">
+        ${canSync?html`<button class=${'icon-btn'+(lead?' lead':'')} title=${lead?'Pupils follow the board — click to let them work at their own pace':'Pupils work at their own pace — click to have them follow the board'} onClick=${()=>setLead(v=>!v)}>${lead?'🔗':'🔓'}</button>`:null}
+        <button class="icon-btn" title="Pens down — eyes on me (A)" onClick=${()=>setAttention(true)}>✋</button>
+        ${canSync?html`<button class=${'icon-btn'+(showProgress?' on':'')} title="Show/hide class progress (P)" onClick=${()=>setShowProgress(v=>!v)}>👥</button>`:null}
+        ${vocab.length?html`<button class="icon-btn" title="Word bank (W)" onClick=${()=>setShowWordBank(true)}>📖</button>`:null}
+        <button class=${'icon-btn'+(showSteps?' on':'')} title="Show/hide step list (S)" onClick=${()=>setShowSteps(v=>!v)}>📋</button>
+        <button class="icon-btn" title=${isFull?'Exit full screen (F)':'Full screen (F)'} onClick=${toggleFull}>${isFull?'🗗':'⛶'}</button>
+        <button class="icon-btn" title="Close board view" onClick=${onExit}>✕</button>
+      </div>
+    </div>
+    <div class="bd-timer-row">
+      <span class="timer-label">⏱ Timer:</span>
+      ${timerOn?html`
+        <button class="btn btn-secondary" onClick=${pauseTimer}>${timerState==='running'?'⏸ Pause':'▶ Resume'}</button>
+        <button class="btn btn-secondary" onClick=${()=>setBigTimer(true)}>⛶ Big timer (T)</button>
+        <button class="btn btn-ghost" onClick=${resetTimer}>✕ Stop</button>`
+      :quickMins.map(m=>html`<button key=${m} class="timer-chip" style=${m===task.timerMins?{borderColor:'var(--violet)',background:'var(--violet-l)',color:'var(--violet)'}:null} onClick=${()=>startTimer(m)}>${m} min${m===task.timerMins?' ★':''}</button>`)}
+      <span style=${{flex:1}}></span>
+      ${showProg?html`<div class="bd-prog">
+        <span class="bd-prog-pill">👥 ${onTask.length} on this task</span>
+        ${!atEnd?html`<span class="bd-prog-pill">📍 ${atOrPast} at step ${idx+1} or further</span>`:null}
+        <span class=${'bd-prog-pill'+(finishedCount?' done':'')}>✅ ${finishedCount} finished</span>
+      </div>`:null}
+      ${canSync&&lead?html`<span class="bd-lead-pill">🔗 Pupils' screens follow the board</span>`:null}
+    </div>
+    <div class="bd-main">
+      ${timerOn?html`<button class=${'bd-tm-float'+(remaining<=10&&timerState==='running'?' ending':'')} title="Make timer big (T)" onClick=${()=>setBigTimer(true)}><${TimerRing} total=${total} remaining=${remaining}/></button>`:null}
+      <div class="bd-stage" key=${idx}>
+        ${atEnd?html`<div class="bd-end">
+          <div class="bd-end-star">⭐</div>
+          <h2>All finished?</h2>
+          <p>Check your work, then put your hand up or press 🙋 Help if you're stuck.</p>
+          ${ext?html`<div class="bd-ext">
+            <div class="bd-ext-lbl">🌟 Finished early? Bonus challenge</div>
+            <div class="bd-ext-text">${ext.text}</div>
+            ${ext.detail?html`<div class="bd-ext-detail">${ext.detail}</div>`:null}
+          </div>`:null}
+        </div>`
+        :(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName="" className=${cls?.name||''}/>`
+        :step?.type==='heading'?html`<${HeadingStep} step=${step}/>`
+        :step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`
+        :html`<${InstructionStep} step=${step}/>`}
+      </div>
+      ${showSteps?html`<div class="bd-side">
+        <h3>📋 Steps</h3>
+        ${[...steps, null].map((st,i)=>html`<button key=${st?.id||'end'} class=${'bd-si'+(i===idx?' cur':i<idx?' done':'')} onClick=${()=>goTo(i)}>
+          ${showProg?html`<div class="bd-si-bar" style=${{width:(perStep[i]/onTask.length*100)+'%'}}></div>`:null}
+          <span class="bd-si-n">${!st?'⭐':i<idx?'✓':i+1}</span>
+          <span class="bd-si-txt">${st?stepLabel(st):(ext?'Finished + bonus challenge':'Finished')}</span>
+          ${showProg&&perStep[i]?html`<span class="bd-si-c" title=${perStep[i]+' pupil'+(perStep[i]===1?'':'s')+' here'}>${perStep[i]}</span>`:null}
+        </button>`)}
+      </div>`:null}
+    </div>
+    <div class="bd-nav">
+      <button class="btn btn-secondary" onClick=${()=>goTo(idx-1)} disabled=${idx===0}>← Back</button>
+      <span class="bd-count">${atEnd?'Finished':'Step '+(idx+1)+' of '+totalSteps}</span>
+      <div class="step-dots">${steps.map((_,i)=>html`<div key=${i} class=${'sdot'+(i===idx?' cur':i<idx?' done':'')}></div>`)}</div>
+      <span class="bd-keys">← → move · A pens down · T timer · Q QR · P progress · F full screen</span>
+      <button class="btn btn-primary" onClick=${()=>goTo(idx+1)} disabled=${atEnd}>Next →</button>
     </div>
   </div>`;
 }
@@ -1475,6 +1845,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   const [publishState, setPublishState] = useState('idle');
   const [helpNames, setHelpNames]   = useState({});
   const [checkinPeople, setCheckinPeople] = useState({});
+  const [boardTask, setBoardTask] = useState(null);
   const helpCount = Object.keys(helpNames).length;
   const noise = useNoise();
   useEffect(()=>{ noise.start(); },[]);
@@ -1724,6 +2095,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
 
   const nameChips = names => names.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`);
   return html`<div class="t-screen">
+    ${boardTask?html`<${BoardMode} task=${boardTask} cls=${activeCls} settings=${settings} noise=${noise} db=${db} onExit=${()=>setBoardTask(null)}/>`:null}
     ${showQR?html`<${QRModal} url=${qrUrl} cls=${activeCls} classes=${classes} onClose=${()=>setShowQR(false)}/>`:null}
     <div class="t-top">
     <div class="ph">
@@ -1847,7 +2219,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
               ${(task.vocab||[]).length>0?html`<span>📖 ${task.vocab.length} word${task.vocab.length!==1?'s':''}</span>`:null}
             </div>
           </div>
-          <div class="tc-foot"><button class="btn btn-orange btn-full" onClick=${publishToClass} disabled=${publishState==='loading'}>${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}</button></div>
+          <div class="tc-foot"><button class="btn btn-secondary btn-full" style=${{marginBottom:'8px'}} disabled=${!task.steps.length} onClick=${()=>setBoardTask(task)}>📺 Show on Board</button><button class="btn btn-orange btn-full" onClick=${publishToClass} disabled=${publishState==='loading'}>${publishState==='loading'?'⏳ Publishing…':'📡 Publish to Class'}</button></div>
         </div>`;
       })}</div>`}
 
@@ -1896,7 +2268,7 @@ function PinModal({ pin, onOk, onCancel }) {
 }
 
 // ── PupilSelect ────────────────────────────────────────────────
-function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
+function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack, boardTaskId }) {
   const tasks = classTasks||loadTasks();
   const title = classTasks?('📚 '+(className||'Class Tasks')):'📚 Choose your task';
   return html`<div class="ps-screen">
@@ -1908,7 +2280,8 @@ function PupilSelect({ classTasks, className, onJoinClass, onSelect, onBack }) {
     ${tasks.length===0?html`<div class="empty" style=${{color:'rgba(255,255,255,.85)'}}><div class="empty-ico">😕</div><p>No tasks yet — ask your teacher!</p></div>`:
     html`<div class="ps-grid">${tasks.map(t=>{
       const s=SUBJECTS.find(x=>x.id===t.subject)||SUBJECTS[7];
-      return html`<button key=${t.id} class="ps-card" onClick=${()=>onSelect(t)}>
+      return html`<button key=${t.id} class=${'ps-card'+(t.id===boardTaskId?' onboard':'')} onClick=${()=>onSelect(t)}>
+        ${t.id===boardTaskId?html`<span class="ps-onboard">📺 On the board</span>`:null}
         <div class="subj-icon" style=${{background:s.light}}>${s.emoji}</div>
         <div class="ps-subj">${s.label}</div>
         <div class="ps-name">${t.title}</div>
@@ -2023,6 +2396,25 @@ function App() {
     return unsub;
   },[]);
 
+  // Live class doc: picks up newly published tasks and the teacher's board (step, pens down)
+  const [board,setBoard] = useState(null);
+  useEffect(()=>{
+    setBoard(null);
+    if (!db || !joinedClassCode) return;
+    const ref = db.doc('classes/'+joinedClassCode);
+    if (typeof ref.onSnapshot !== 'function') return;
+    return ref.onSnapshot(snap=>{
+      if (!snap.exists) return;
+      const d = snap.data();
+      setBoard(d.board||null);
+      if (Array.isArray(d.tasks)) setClassTasks(d.tasks);
+    },()=>{});
+  },[db, joinedClassCode]);
+  // Ignore a board left on from an earlier lesson (e.g. the teacher's tab was closed)
+  const liveBoard = board && board.updatedAt > Date.now() - 3*60*60*1000 ? board : null;
+  const boardTask = liveBoard?.active ? (classTasks||[]).find(t=>t.id===liveBoard.taskId) || null : null;
+  const attn = liveBoard?.attention && (screen==='select'||screen==='pupil') ? html`<${AttentionScreen} sub="Eyes on your teacher"/>` : null;
+
   const signOut = () => { if(_fbAuth) _fbAuth.signOut(); setTeacher(null); setScreen('landing'); };
   const goTeacher = () => {
     if (_fbAuth && !teacher) { setScreen('teacherlogin'); }
@@ -2034,8 +2426,9 @@ function App() {
   if (screen==='teacherlogin') return html`<${TeacherLogin} onLoggedIn=${user=>{setTeacher(user);setScreen('teacher');}} onBack=${()=>setScreen('landing')}/>`;
   if (screen==='teacher')      return html`<${TeacherMode} db=${db} teacher=${teacher} onExit=${()=>setScreen('landing')} onSignOut=${_fbAuth?signOut:null}/>`;
   if (screen==='classjoin')    return html`<${ClassJoin} db=${db} initialCode=${urlClassCode} onLoaded=${(tasks,name,code)=>{setClassTasks(tasks);setClassName(name);setJoinedClassCode(code);setScreen('select');}} onBack=${()=>setScreen(classTasks?'select':'landing')}/>`;
-  if (screen==='select')       return html`<${PupilSelect} classTasks=${classTasks} className=${className} onJoinClass=${()=>setScreen('classjoin')} onSelect=${t=>{setActiveTask(t);setActiveSettings({...loadSettings(),classCode:joinedClassCode,className});setScreen('pupil');}} onBack=${()=>{setClassTasks(null);setScreen('landing');}}/>`;
-  if (screen==='pupil'&&activeTask) return html`<${PupilMode} task=${activeTask} settings=${activeSettings} db=${db} onExit=${()=>setScreen('landing')}/>`;
+  const openTask = t => { setActiveTask(t); setActiveSettings({...loadSettings(),classCode:joinedClassCode,className}); setScreen('pupil'); };
+  if (screen==='select')       return html`<${React.Fragment}>${attn}<${PupilSelect} classTasks=${classTasks} className=${className} boardTaskId=${boardTask?.id} onJoinClass=${()=>setScreen('classjoin')} onSelect=${openTask} onBack=${()=>{setClassTasks(null);setJoinedClassCode('');setScreen('landing');}}/></${React.Fragment}>`;
+  if (screen==='pupil'&&activeTask) return html`<${React.Fragment}>${attn}<${PupilMode} key=${activeTask.id} task=${activeTask} settings=${activeSettings} db=${db} board=${liveBoard} boardTask=${boardTask} onSwitchTask=${joinedClassCode?openTask:null} onExit=${()=>setScreen('landing')}/></${React.Fragment}>`;
   return html`<${Landing} onTeacher=${goTeacher} onPupil=${()=>setScreen('classjoin')} useFirebaseAuth=${!!_fbAuth}/>`;
 }
 
