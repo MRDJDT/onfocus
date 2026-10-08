@@ -288,6 +288,15 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .cl-ul{display:block;height:3px;background:#1E1B4B;border-radius:2px;transform:scaleX(0);transform-origin:left;transition:transform .6s ease;margin-top:4px;}
 .cl-ul.show{transform:scaleX(1);}
 .cl-ul-right{transform-origin:right;}
+.tidy-step{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;max-width:620px;margin:0 auto;width:100%;padding:12px 0;}
+.tidy-list{display:flex;flex-direction:column;gap:8px;width:100%;}
+.tidy-job{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--r-sm);border:2px solid var(--border);background:var(--surface);color:var(--text);font:800 1.05rem/1.3 'Nunito',sans-serif;text-align:left;cursor:pointer;transition:all .15s;}
+.tidy-job.done{border-color:var(--green);background:var(--green-l);}
+.tidy-job.done span:last-child{text-decoration:line-through;opacity:.7;}
+.tidy-box{flex-shrink:0;width:28px;height:28px;border-radius:8px;border:2px solid var(--green);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;}
+.tidy-job.done .tidy-box{background:var(--green);}
+.bd-stage .tidy-step{max-width:min(1100px,92%);}
+.bd-stage .tidy-job{font-size:clamp(1.3rem,2.6vw,2rem);padding:16px 22px;}
 .copy-done{display:flex;align-items:center;gap:10px;background:var(--green-l);color:#15803D;border-radius:var(--r-sm);padding:13px 18px;font-weight:800;font-size:1rem;animation:bounceIn .4s ease both;}
 
 /* INSTRUCTION STEP */
@@ -573,7 +582,10 @@ const STEP_TYPES = [
   { v:'task', l:'✏️ Activity / Task', d:'A piece of work for pupils to complete', icon:'✏️' },
   { v:'think', l:'🤔 Think & Discuss', d:'A question to think about or talk through', icon:'🤔' },
   { v:'file', l:'📎 Show a File', d:'Show one of the PDFs or pictures you uploaded' },
+  { v:'tidy', l:'🧹 Tidy Up', d:'A checklist of tidy-up jobs for the end of the lesson' },
 ];
+const TIDY_DEFAULT = ['Put pens and pencils away','Close your book and hand it in','Pick up anything on the floor','Push your chair in'];
+const tidyJobs = step => { const j=(step.jobs||[]).map(x=>x.trim()).filter(Boolean); return j.length?j:TIDY_DEFAULT; };
 // ── Firebase ────────────────────────────────────────────────────
 // Paste your Firebase config here — get it from console.firebase.google.com
 // Enable: Authentication > Sign-in method > Email/Password, and Firestore Database
@@ -1065,6 +1077,26 @@ function HeadingStep({ step }) {
   </div>`;
 }
 
+// ── TidyStep ──────────────────────────────────────────────────
+function TidyStep({ step }) {
+  const jobs = tidyJobs(step);
+  const [done, setDone] = useState([]);
+  const toggle = i => setDone(d => d.includes(i) ? d.filter(x=>x!==i) : [...d,i]);
+  const all = jobs.every((_,i)=>done.includes(i));
+  return html`<div class="tidy-step">
+    <div class="step-big-icon">🧹</div>
+    <span class="step-type-lbl" style=${{background:'var(--green-l)',color:'#15803D'}}>🧹 Tidy Up</span>
+    <h2 class="step-main">${step.text||'Time to tidy up!'}</h2>
+    ${step.detail?html`<p class="step-detail">${step.detail}</p>`:null}
+    <div class="tidy-list">
+      ${jobs.map((j,i)=>html`<button key=${i} class=${'tidy-job'+(done.includes(i)?' done':'')} onClick=${()=>toggle(i)}>
+        <span class="tidy-box">${done.includes(i)?'✓':''}</span><span>${j}</span>
+      </button>`)}
+    </div>
+    ${all?html`<div class="copy-done">✨ All tidy — well done!</div>`:null}
+  </div>`;
+}
+
 // ── PupilMode ──────────────────────────────────────────────────
 function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSwitchTask }) {
   const [pupilName, setPupilName] = useState(() => preview ? 'Sample Pupil' : loadPupilName());
@@ -1188,7 +1220,7 @@ function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSw
       <span class="prog-lbl">Step ${idx+1} of ${totalSteps}</span>
     </div>
     <div class="step-area" key=${stepKey}>
-      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`:html`<${InstructionStep} step=${step}/>`}
+      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`:step?.type==='tidy'?html`<${TidyStep} step=${step}/>`:html`<${InstructionStep} step=${step}/>`}
     </div>
     <div class="pu-nav">
       <button class="btn btn-secondary" onClick=${()=>go(-1)} disabled=${idx===0}>← Back</button>
@@ -1351,7 +1383,7 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
     return ()=>window.removeEventListener('keydown', onKey);
   },[totalSteps, overlayOpen, bigTimer, showQR, timerOn, timerState, vocab.length, onExit]);
 
-  const stepLabel = st => st.type==='copy_title'?'Date and title':st.type==='copy_title_full'?'Name, class, date and title':(st.text||(st.type==='file'?'Look at the file':'Step'));
+  const stepLabel = st => st.type==='copy_title'?'Date and title':st.type==='copy_title_full'?'Name, class, date and title':(st.text||(st.type==='file'?'Look at the file':st.type==='tidy'?'Tidy up':'Step'));
 
   return html`<div class="bd-screen">
     ${showWordBank?html`<${WordBankPanel} vocab=${vocab} onClose=${()=>setShowWordBank(false)}/>`:null}
@@ -1419,6 +1451,7 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
         :(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName="" className=${cls?.name||''}/>`
         :step?.type==='heading'?html`<${HeadingStep} step=${step}/>`
         :step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`
+        :step?.type==='tidy'?html`<${TidyStep} step=${step}/>`
         :html`<${InstructionStep} step=${step}/>`}
       </div>
       ${showSteps?html`<div class="bd-side">
@@ -1643,6 +1676,12 @@ function TaskEditor({ init, onSave, onCancel }) {
               <input class="finput" type="text" value=${step.text||''} placeholder="Section heading…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Optional subtitle…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
+            ${(step.type==='tidy')?html`<div class="si-body">
+              <input class="finput" type="text" value=${step.text||''} placeholder="Time to tidy up!" onInput=${e=>upStep(i,'text',e.target.value)}/>
+              <textarea class="finput" rows="5" value=${step.jobs?step.jobs.join('\n'):TIDY_DEFAULT.join('\n')} placeholder="One job per line…" onInput=${e=>upStep(i,'jobs',e.target.value.split('\n'))}></textarea>
+              <span style=${{color:'var(--faint)',fontSize:'.8rem',fontWeight:700}}>One job per line — pupils tick each one off.</span>
+              <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
+            </div>`:null}
             ${(step.type==='file')?html`<div class="si-body">
               ${(task.files||[]).length===0?html`<p style=${{color:'var(--faint)',fontSize:'.82rem',fontWeight:700,margin:0}}>Upload a file in the "Files for pupils" box above first.</p>`
                 :html`<div style=${{display:'flex',flexDirection:'column',gap:'6px'}}>
@@ -1658,7 +1697,7 @@ function TaskEditor({ init, onSave, onCancel }) {
               <input class="finput" type="text" value=${step.text||''} placeholder="Heading above the file (optional)…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Instruction below the file (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
-            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading'&&step.type!=='file')?html`<div class="si-body">
+            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading'&&step.type!=='file'&&step.type!=='tidy')?html`<div class="si-body">
               <div class="icon-grid">${ICONS.map(ic=>html`<button key=${ic} class=${'ic-opt'+(step.icon===ic?' sel':'')} onClick=${()=>upStep(i,'icon',ic)}>${ic}</button>`)}</div>
               <input class="finput" type="text" value=${step.text||''} placeholder="Instruction text…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
