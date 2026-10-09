@@ -1,17 +1,11 @@
 // POST /api/chunk — teacher-only. Body: { text, yearGroup?, subject? }
 // Turns a lesson plan / paragraph into bite-sized pupil steps using Claude.
 // Needs the ANTHROPIC_API_KEY secret (and optionally AI_MODEL) on the Pages project.
-import { verifyFirebaseToken } from '../_lib/auth.js';
+import { checkTeacher, callTool, json, str } from '../_lib/claude.js';
 
-const PROJECT_ID = 'onfocus-90d5a';
 const MAX_CHARS = 12000;
-const DEFAULT_MODEL = 'claude-sonnet-5';
 const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
 const TYPES = ['heading', 'instruction', 'task', 'think'];
-
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-});
 
 const SYSTEM = `You turn a teacher's lesson plan (or a paragraph describing a lesson) into a sequence of short, clear steps that pupils work through one screen at a time on a tablet or laptop.
 
@@ -59,14 +53,9 @@ const TOOL = {
   },
 };
 
-const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
-
 export async function onRequestPost({ request, env }) {
-  if (!env.ANTHROPIC_API_KEY) return json({ error: 'AI is not set up yet — an ANTHROPIC_API_KEY needs adding to the app.' }, 503);
-
-  const auth = (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
-  try { await verifyFirebaseToken(auth, PROJECT_ID); }
-  catch { return json({ error: 'Please sign in again.' }, 401); }
+  const denied = await checkTeacher(request, env);
+  if (denied) return denied;
 
   let body;
   try { body = await request.json(); } catch { return json({ error: 'Bad request.' }, 400); }
@@ -77,30 +66,9 @@ export async function onRequestPost({ request, env }) {
 
   const prompt = (subject ? `Subject: ${subject}\n` : '') + (yearGroup ? `Year group: ${yearGroup}\n` : '') + `\n<lesson>\n${text}\n</lesson>`;
 
-  let res;
-  try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: env.AI_MODEL || DEFAULT_MODEL,
-        max_tokens: 4000,
-        system: SYSTEM,
-        messages: [{ role: 'user', content: prompt }],
-        tools: [TOOL],
-        tool_choice: { type: 'tool', name: TOOL.name },
-      }),
-    });
-  } catch { return json({ error: 'Could not reach the AI. Please try again.' }, 502); }
-
-  if (res.status === 401 || res.status === 403) return json({ error: 'The AI key is not valid. Ask whoever set up the app to check it.' }, 503);
-  if (res.status === 429 || res.status === 529) return json({ error: 'The AI is busy right now. Please try again in a minute.' }, 429);
-  if (!res.ok) { console.error('AI error', res.status, (await res.text()).slice(0, 300)); return json({ error: 'The AI service had a problem. Please try again.' }, 502); }
-
-  const data = await res.json();
-  const input = (data.content || []).find(b => b.type === 'tool_use')?.input;
-  if (data.stop_reason === 'refusal') return json({ error: 'The AI could not help with that. Try rewording it.' }, 422);
-  if (!input || !Array.isArray(input.steps) || data.stop_reason === 'max_tokens') return json({ error: 'The AI did not return usable steps. Please try again.' }, 502);
+  const { input, error } = await callTool(env, { system: SYSTEM, prompt, tool: TOOL });
+  if (error) return error;
+  if (!Array.isArray(input.steps)) return json({ error: 'The AI did not return usable steps. Please try again.' }, 502);
 
   const steps = input.steps.slice(0, 20).map(s => {
     const type = TYPES.includes(s?.type) ? s.type : 'instruction';

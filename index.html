@@ -576,6 +576,7 @@ const SUBJECTS = [
   { id:'dt',        label:'D.T.',      emoji:'🔧', col:'#D97706', light:'#FEF3C7', dark:'#92400E' },
   { id:'mfl',       label:'MFL',       emoji:'🗺️',  col:'#059669', light:'#D1FAE5', dark:'#065F46' },
   { id:'re',        label:'R.E.',      emoji:'🕊️',  col:'#7C3AED', light:'#EDE9FE', dark:'#4C1D95' },
+  { id:'morning',   label:'Morning Tasks', emoji:'🌅', col:'#F97316', light:'#FFEDD5', dark:'#9A3412' },
   { id:'other',     label:'Other',     emoji:'📚', col:'#6B7280', light:'#F3F4F6', dark:'#374151' },
 ];
 const ICONS = ['📖','✏️','🤔','💬','🔍','📐','🖊️','💡','🌟','🎯','📊','🖋️','🧮','🗣️','🎭','🌱'];
@@ -588,9 +589,17 @@ const STEP_TYPES = [
   { v:'think', l:'🤔 Think & Discuss', d:'A question to think about or talk through', icon:'🤔' },
   { v:'file', l:'📎 Show a File', d:'Show one of the PDFs or pictures you uploaded' },
   { v:'tidy', l:'🧹 Tidy Up', d:'A checklist of tidy-up jobs for the end of the lesson' },
+  { v:'morning', l:'🌅 Morning Jobs', d:'A checklist of jobs for pupils to do as they come in' },
 ];
-const TIDY_DEFAULT = ['Put pens and pencils away','Close your book and hand it in','Pick up anything on the floor','Push your chair in'];
-const tidyJobs = step => { const j=(step.jobs||[]).map(x=>x.trim()).filter(Boolean); return j.length?j:TIDY_DEFAULT; };
+// Tickable checklist steps: same screen, different wording and default jobs.
+const CHECKLISTS = {
+  tidy: { emoji:'🧹', label:'Tidy Up', title:'Time to tidy up!', done:'✨ All tidy — well done!', mins:2,
+    jobs:['Put pens and pencils away','Close your book and hand it in','Pick up anything on the floor','Push your chair in'] },
+  morning: { emoji:'🌅', label:'Morning Jobs', title:'Good morning!', done:'☀️ All done — you\'re ready for the day!', mins:0,
+    jobs:['Hang up your coat and bag','Put your water bottle and reading book away','Hand in your reading record or homework','Make your lunch choice','Get your book and pencil ready'] },
+};
+const isChecklist = step => !!CHECKLISTS[step?.type];
+const checklistJobs = step => { const j=(step.jobs||[]).map(x=>x.trim()).filter(Boolean); return j.length?j:CHECKLISTS[step.type].jobs; };
 // ── Firebase ────────────────────────────────────────────────────
 // Paste your Firebase config here — get it from console.firebase.google.com
 // Enable: Authentication > Sign-in method > Email/Password, and Firestore Database
@@ -650,6 +659,29 @@ const defTasks = () => [{
     { id:genId(), type:'task', icon:'🌟', text:'Add adjectives to describe what you can see', detail:'Think about colours, shapes, sizes and textures' },
   ]
 }];
+
+// Starting point for a "Morning Tasks" lesson — the teacher edits the content (or lets AI write it).
+const MORNING_ACTIVITIES = [
+  { id:'handwriting', l:'✍️ Handwriting', on:true },
+  { id:'maths', l:'🧮 Maths starter', on:true },
+  { id:'tables', l:'✖️ Times tables', on:false },
+  { id:'spelling', l:'🔤 Spellings', on:true },
+  { id:'grammar', l:'🔧 Fix the sentence', on:false },
+  { id:'quickwrite', l:'🖋️ Quick write', on:false },
+  { id:'reading', l:'📖 Quiet reading', on:true },
+  { id:'puzzle', l:'🧩 Brain teaser', on:false },
+];
+const morningTemplate = () => ({
+  id: genId(), subject:'morning', title:'Morning Tasks', date: todayISO(), timerMins: 15, vocab: [], files: [],
+  steps: [
+    { id:genId(), type:'morning', text:'Good morning!', detail:'Come in quietly and get settled.', jobs:[...CHECKLISTS.morning.jobs], mins:0 },
+    { id:genId(), type:'task', icon:'🖊️', text:'Handwriting: copy the sentence neatly', detail:'The quick brown fox jumps over the lazy dog.' },
+    { id:genId(), type:'task', icon:'🧮', text:'Maths starter: answer these in your book', detail:'1) 45 + 27   2) 83 − 36   3) 6 × 7   4) 48 ÷ 8' },
+    { id:genId(), type:'task', icon:'✏️', text:'Practise your spellings', detail:'Look, say, cover, write, check — three times each.' },
+    { id:genId(), type:'instruction', icon:'📖', text:'Read your reading book quietly', detail:'Be ready to listen for your name on the register.' },
+  ],
+  extension: { text:'Make up three maths questions of your own', detail:'Swap with a partner later and check each other\'s answers.' },
+});
 
 const loadTasks = () => { try { return JSON.parse(localStorage.getItem(TASK_KEY)) || defTasks(); } catch { return defTasks(); } };
 const saveTasks = t => { try { localStorage.setItem(TASK_KEY, JSON.stringify(t)); } catch {} };
@@ -712,17 +744,20 @@ async function uploadTaskFile(file) {
   return { id: genId(), name: data.name, kind: data.kind, url: data.url, size: data.size };
 }
 
-// Ask the AI (via /api/chunk) to break a lesson plan into pupil steps.
-async function aiChunkLesson(text, yearGroup, subject) {
+async function aiPost(path, body) {
   const user = _fbAuth && _fbAuth.currentUser;
   if (!user) throw new Error('Sign in with your teacher account to use AI.');
   let res;
-  try { res = await fetch('/api/chunk', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() }, body: JSON.stringify({ text, yearGroup, subject }) }); }
+  try { res = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await user.getIdToken() }, body: JSON.stringify(body) }); }
   catch { throw new Error('Could not reach the AI — check your connection and try again.'); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'AI request failed (' + res.status + ').');
   return data;
 }
+// Ask the AI (via /api/chunk) to break a lesson plan into pupil steps.
+const aiChunkLesson = (text, yearGroup, subject) => aiPost('/api/chunk', { text, yearGroup, subject });
+// Ask the AI (via /api/morning) to write a set of morning tasks.
+const aiMorningTasks = (yearGroup, focus, activities, arrival) => aiPost('/api/morning', { yearGroup, focus, activities, arrival });
 
 // ── noise hook ─────────────────────────────────────────────────
 function useNoise() {
@@ -1086,13 +1121,14 @@ function HeadingStep({ step }) {
   </div>`;
 }
 
-// ── TidyStep ──────────────────────────────────────────────────
-function TidyStep({ step }) {
-  const jobs = tidyJobs(step);
+// ── ChecklistStep (Tidy Up / Morning Jobs) ─────────────────────
+function ChecklistStep({ step }) {
+  const cfg = CHECKLISTS[step.type];
+  const jobs = checklistJobs(step);
   const [done, setDone] = useState([]);
   const toggle = i => setDone(d => d.includes(i) ? d.filter(x=>x!==i) : [...d,i]);
   const all = jobs.every((_,i)=>done.includes(i));
-  const total = Math.round((step.mins ?? 2) * 60);
+  const total = Math.round((step.mins ?? cfg.mins) * 60);
   const [left, setLeft] = useState(total);
   const [running, setRunning] = useState(false);
   useEffect(() => { setLeft(total); setRunning(false); }, [total]);
@@ -1112,16 +1148,16 @@ function TidyStep({ step }) {
           :html`<button class="btn btn-primary" onClick=${()=>setRunning(r=>!r)}>${running?'⏸ Pause':left<total?'▶ Resume':'▶ Start timer'}</button>`}
         ${left<total?html`<button class="btn btn-ghost" onClick=${()=>{setRunning(false);setLeft(total);}}>↺ Reset</button>`:null}
       </div>
-    </div>`:html`<div class="step-big-icon">🧹</div>`}
-    <span class="step-type-lbl" style=${{background:'var(--green-l)',color:'#15803D'}}>🧹 Tidy Up</span>
-    <h2 class="step-main">${step.text||'Time to tidy up!'}</h2>
+    </div>`:html`<div class="step-big-icon">${cfg.emoji}</div>`}
+    <span class="step-type-lbl" style=${{background:'var(--green-l)',color:'#15803D'}}>${cfg.emoji} ${cfg.label}</span>
+    <h2 class="step-main">${step.text||cfg.title}</h2>
     ${step.detail?html`<p class="step-detail">${step.detail}</p>`:null}
     <div class="tidy-list">
       ${jobs.map((j,i)=>html`<button key=${i} class=${'tidy-job'+(done.includes(i)?' done':'')} onClick=${()=>toggle(i)}>
         <span class="tidy-box">${done.includes(i)?'✓':''}</span><span>${j}</span>
       </button>`)}
     </div>
-    ${all?html`<div class="copy-done">✨ All tidy — well done!</div>`:null}
+    ${all?html`<div class="copy-done">${cfg.done}</div>`:null}
   </div>`;
 }
 
@@ -1248,7 +1284,7 @@ function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSw
       <span class="prog-lbl">Step ${idx+1} of ${totalSteps}</span>
     </div>
     <div class="step-area" key=${stepKey}>
-      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`:step?.type==='tidy'?html`<${TidyStep} step=${step}/>`:html`<${InstructionStep} step=${step}/>`}
+      ${(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName=${pupilName} className=${settings?.className||''}/>`:step?.type==='heading'?html`<${HeadingStep} step=${step}/>`:step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`:isChecklist(step)?html`<${ChecklistStep} step=${step}/>`:html`<${InstructionStep} step=${step}/>`}
     </div>
     <div class="pu-nav">
       <button class="btn btn-secondary" onClick=${()=>go(-1)} disabled=${idx===0}>← Back</button>
@@ -1411,7 +1447,7 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
     return ()=>window.removeEventListener('keydown', onKey);
   },[totalSteps, overlayOpen, bigTimer, showQR, timerOn, timerState, vocab.length, onExit]);
 
-  const stepLabel = st => st.type==='copy_title'?'Date and title':st.type==='copy_title_full'?'Name, class, date and title':(st.text||(st.type==='file'?'Look at the file':st.type==='tidy'?'Tidy up':'Step'));
+  const stepLabel = st => st.type==='copy_title'?'Date and title':st.type==='copy_title_full'?'Name, class, date and title':(st.text||(st.type==='file'?'Look at the file':isChecklist(st)?CHECKLISTS[st.type].label:'Step'));
 
   return html`<div class="bd-screen">
     ${showWordBank?html`<${WordBankPanel} vocab=${vocab} onClose=${()=>setShowWordBank(false)}/>`:null}
@@ -1479,7 +1515,7 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
         :(step?.type==='copy_title'||step?.type==='copy_title_full')?html`<${CopyTitleStep} step=${step} task=${task} pupilName="" className=${cls?.name||''}/>`
         :step?.type==='heading'?html`<${HeadingStep} step=${step}/>`
         :step?.type==='file'?html`<${FileStep} step=${step} files=${taskFiles} onOpen=${setViewFile}/>`
-        :step?.type==='tidy'?html`<${TidyStep} step=${step}/>`
+        :isChecklist(step)?html`<${ChecklistStep} step=${step}/>`
         :html`<${InstructionStep} step=${step}/>`}
       </div>
       ${showSteps?html`<div class="bd-side">
@@ -1520,8 +1556,8 @@ function StepPicker({ onPick, onClose }) {
 }
 
 // ── TaskEditor ─────────────────────────────────────────────────
-function TaskEditor({ init, onSave, onCancel }) {
-  const [task,setTask] = useState(()=>init||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}],extension:{text:'',detail:''}});
+function TaskEditor({ init, template, onSave, onCancel }) {
+  const [task,setTask] = useState(()=>init||template||{id:genId(),subject:'english',title:'',date:todayISO(),timerMins:0,vocab:[],steps:[{id:genId(),type:'copy_title'}],extension:{text:'',detail:''}});
   const [sampleApi, setSampleApi] = useState(null);
   const [generating, setGenerating] = useState({});
   const up = (k,v) => setTask(t=>({...t,[k]:v}));
@@ -1546,16 +1582,24 @@ function TaskEditor({ init, onSave, onCancel }) {
   const [planErr, setPlanErr] = useState('');
   const [planDraft, setPlanDraft] = useState(null);
   const [planDone, setPlanDone] = useState('');
+  const [mornFocus, setMornFocus] = useState('');
+  const [mornActs, setMornActs] = useState(()=>MORNING_ACTIVITIES.filter(a=>a.on).map(a=>a.id));
+  const [mornArrival, setMornArrival] = useState(true);
+  const isMorning = task.subject==='morning';
   const isFixedStep = st => st.type==='copy_title'||st.type==='copy_title_full'||st.type==='file';
   const hasContentSteps = task.steps.some(st=>!isFixedStep(st));
-  const buildFromPlan = async () => {
+  const runAI = async ask => {
     setPlanErr(''); setPlanDone(''); setPlanDraft(null); setPlanBusy(true);
     try {
-      const d = await aiChunkLesson(planText, planYear.trim(), SUBJECTS.find(x=>x.id===task.subject)?.label||'');
+      const d = await ask();
       if (hasContentSteps) setPlanDraft(d); else applyPlan(d, 'replace');
     } catch(e) { setPlanErr(e.message); }
     setPlanBusy(false);
   };
+  const buildFromPlan = () => runAI(()=>aiChunkLesson(planText, planYear.trim(), SUBJECTS.find(x=>x.id===task.subject)?.label||''));
+  // keep the ticked activities in the order they're listed
+  const buildMorning = () => runAI(()=>aiMorningTasks(planYear.trim(), mornFocus.trim(), MORNING_ACTIVITIES.map(a=>a.id).filter(id=>mornActs.includes(id)), mornArrival));
+  const toggleAct = id => setMornActs(a=>a.includes(id)?a.filter(x=>x!==id):[...a,id]);
   const applyPlan = (d, mode) => {
     const fresh = d.steps.map(st=>({ id:genId(), ...st }));
     setTask(t=>{
@@ -1608,16 +1652,28 @@ function TaskEditor({ init, onSave, onCancel }) {
   };
 
   return html`<div class="ed-screen">
-    <div class="ph"><button class="back" onClick=${onCancel}>← Back</button><h1>${init?'Edit Task':'✨ New Task'}</h1></div>
+    <div class="ph"><button class="back" onClick=${onCancel}>← Back</button><h1>${init?'Edit Task':template?'🌅 New Morning Tasks':'✨ New Task'}</h1></div>
     <div class="ed-body">
       <div class="fcard">
+        ${isMorning?html`
+        <label class="flabel">✨ Write morning tasks with AI (optional)</label>
+        <p style=${{color:'var(--faint)',fontSize:'.82rem',margin:'0 0 10px',fontWeight:600}}>Tick what you want and AI will write it — real questions, spellings and sentences, pitched at your year group. You can edit everything afterwards.</p>
+        <div class="chips">
+          <button class=${'chip'+(mornArrival?' sel':'')} style=${{'--cc':'#F97316'}} onClick=${()=>setMornArrival(v=>!v)}>🌅 Arrival jobs</button>
+          ${MORNING_ACTIVITIES.map(a=>html`<button key=${a.id} class=${'chip'+(mornActs.includes(a.id)?' sel':'')} style=${{'--cc':'#F97316'}} onClick=${()=>toggleAct(a.id)}>${a.l}</button>`)}
+        </div>
+        <input class="finput" style=${{marginTop:'10px'}} type="text" maxlength="400" value=${mornFocus} placeholder="Focus (optional) — e.g. 7 times table, words ending -tion, Bonfire Night" onInput=${e=>setMornFocus(e.target.value)}/>
+        <div class="ai-plan-row">
+          <input class="finput" style=${{maxWidth:'190px'}} type="text" value=${planYear} placeholder="Year group (optional)" onInput=${e=>setPlanYear(e.target.value)}/>
+          <button class="ai-def-btn" disabled=${planBusy||(!mornArrival&&!mornActs.length)} onClick=${buildMorning}>${planBusy?'⏳ Thinking…':'✨ Write morning tasks'}</button>
+        </div>`:html`
         <label class="flabel">✨ Build steps from a lesson plan (optional)</label>
         <p style=${{color:'var(--faint)',fontSize:'.82rem',margin:'0 0 10px',fontWeight:600}}>Paste your lesson plan or a paragraph about the lesson. AI will break it into short steps for pupils, plus a word bank and an extension task. You can edit everything afterwards.</p>
         <textarea class="finput" rows="6" value=${planText} placeholder="e.g. Pupils read the opening of The Iron Man, then discuss how Hughes builds tension. They pick out powerful verbs and write a paragraph describing the Iron Man's arrival…" onInput=${e=>setPlanText(e.target.value)}></textarea>
         <div class="ai-plan-row">
           <input class="finput" style=${{maxWidth:'190px'}} type="text" value=${planYear} placeholder="Year group (optional)" onInput=${e=>setPlanYear(e.target.value)}/>
           <button class="ai-def-btn" disabled=${planBusy||planText.trim().length<20} onClick=${buildFromPlan}>${planBusy?'⏳ Thinking…':'✨ Create steps'}</button>
-        </div>
+        </div>`}
         ${planErr?html`<div class="up-err">⚠️ ${planErr}</div>`:null}
         ${planDone?html`<p style=${{color:'var(--green,#059669)',fontWeight:800,fontSize:'.88rem',margin:'10px 0 0'}}>${planDone}</p>`:null}
         ${planDraft?html`<div class="ai-choice">
@@ -1704,12 +1760,12 @@ function TaskEditor({ init, onSave, onCancel }) {
               <input class="finput" type="text" value=${step.text||''} placeholder="Section heading…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Optional subtitle…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
-            ${(step.type==='tidy')?html`<div class="si-body">
-              <input class="finput" type="text" value=${step.text||''} placeholder="Time to tidy up!" onInput=${e=>upStep(i,'text',e.target.value)}/>
+            ${isChecklist(step)?html`<div class="si-body">
+              <input class="finput" type="text" value=${step.text||''} placeholder=${CHECKLISTS[step.type].title} onInput=${e=>upStep(i,'text',e.target.value)}/>
               <label style=${{display:'flex',alignItems:'center',gap:'8px',color:'var(--faint)',fontSize:'.85rem',fontWeight:700}}>⏱️ Countdown
-                <input class="finput" style=${{width:'80px'}} type="number" min="0" max="30" step="0.5" value=${step.mins ?? 2} onInput=${e=>upStep(i,'mins',Math.max(0,Math.min(30,parseFloat(e.target.value)||0)))}/>
+                <input class="finput" style=${{width:'80px'}} type="number" min="0" max="30" step="0.5" value=${step.mins ?? CHECKLISTS[step.type].mins} onInput=${e=>upStep(i,'mins',Math.max(0,Math.min(30,parseFloat(e.target.value)||0)))}/>
                 minutes (0 = no timer)</label>
-              <textarea class="finput" rows="5" value=${step.jobs?step.jobs.join('\n'):TIDY_DEFAULT.join('\n')} placeholder="One job per line…" onInput=${e=>upStep(i,'jobs',e.target.value.split('\n'))}></textarea>
+              <textarea class="finput" rows="5" value=${(step.jobs||CHECKLISTS[step.type].jobs).join('\n')} placeholder="One job per line…" onInput=${e=>upStep(i,'jobs',e.target.value.split('\n'))}></textarea>
               <span style=${{color:'var(--faint)',fontSize:'.8rem',fontWeight:700}}>One job per line — pupils tick each one off.</span>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
@@ -1728,7 +1784,7 @@ function TaskEditor({ init, onSave, onCancel }) {
               <input class="finput" type="text" value=${step.text||''} placeholder="Heading above the file (optional)…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Instruction below the file (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
             </div>`:null}
-            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading'&&step.type!=='file'&&step.type!=='tidy')?html`<div class="si-body">
+            ${(step.type!=='copy_title'&&step.type!=='copy_title_full'&&step.type!=='heading'&&step.type!=='file'&&!isChecklist(step))?html`<div class="si-body">
               <div class="icon-grid">${ICONS.map(ic=>html`<button key=${ic} class=${'ic-opt'+(step.icon===ic?' sel':'')} onClick=${()=>upStep(i,'icon',ic)}>${ic}</button>`)}</div>
               <input class="finput" type="text" value=${step.text||''} placeholder="Instruction text…" onInput=${e=>upStep(i,'text',e.target.value)}/>
               <input class="finput" type="text" value=${step.detail||''} placeholder="Extra detail (optional)…" onInput=${e=>upStep(i,'detail',e.target.value)}/>
@@ -2161,7 +2217,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   };
   if (sorters[sortBy]) visibleTasks.sort(sorters[sortBy]);
 
-  if (editing) return html`<${TaskEditor} init=${editing==='new'?null:editing} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
+  if (editing) return html`<${TaskEditor} init=${typeof editing==='string'?null:editing} template=${editing==='morning'?morningTemplate():null} onSave=${saveTask} onCancel=${()=>setEditing(null)}/>`;
 
   const nameChips = names => names.map(n=>html`<span key=${n} class="live-name-chip">${n}</span>`);
   return html`<div class="t-screen">
@@ -2241,7 +2297,10 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
           ${publishState==='ok'?html`<span class="cs-ok">✅ Published to ${activeCls.name}!</span>`:
             publishState==='err'?html`<span class="cs-err">❌ ${db?'Publish failed — try again':'Firebase needed for class sync'}</span>`:null}
         </div>
-        <button class="btn btn-primary" onClick=${()=>setEditing('new')}>+ Create Task</button>
+        <div style=${{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+          <button class="btn btn-secondary" onClick=${()=>setEditing('morning')}>🌅 Morning Tasks</button>
+          <button class="btn btn-primary" onClick=${()=>setEditing('new')}>+ Create Task</button>
+        </div>
       </div>
 
       <!-- FILTERS -->
