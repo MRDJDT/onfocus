@@ -7,9 +7,7 @@
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/svg+xml" href="/logo.svg">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<link href="/fonts/fonts.css" rel="stylesheet">
 
 <style>
 :root {
@@ -96,6 +94,8 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .btn-primary:not(:disabled):active{background:var(--blue-d);}
 .btn-secondary{background:var(--bg);color:var(--text);border:2px solid var(--border);}
 .btn-orange{background:var(--coral);color:#fff;box-shadow:0 4px 16px rgba(249,115,22,.35);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:disabled{opacity:.5;}
 .btn-ghost{background:transparent;color:var(--muted);border:2px solid var(--border);}
 .btn-full{width:100%;justify-content:center;}
 .icon-btn{width:40px;height:40px;border-radius:10px;border:none;background:var(--bg);color:var(--muted);font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .12s,transform .12s;flex-shrink:0;position:relative;}
@@ -157,6 +157,8 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .settings-panel{background:var(--surface);border-radius:var(--r);padding:18px;box-shadow:var(--sh);display:flex;flex-direction:column;gap:14px;animation:slideUp .3s ease both;}
 .settings-panel h3{font-family:'Fredoka One',cursive;font-size:1.25rem;color:var(--text);}
 .srow{display:flex;flex-direction:column;gap:6px;}
+.del-acct{border-top:2px solid var(--border);padding-top:14px;margin-top:4px;}
+.del-acct-warn{color:var(--red);font-weight:700;font-size:.88rem;margin:0;}
 .srow label{font-size:.88rem;font-weight:800;color:var(--muted);}
 .srow input[type=range]{-webkit-appearance:none;height:6px;border-radius:3px;background:var(--blue-l);outline:none;}
 .srow input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--blue);cursor:pointer;box-shadow:0 2px 8px rgba(59,130,246,.4);}
@@ -327,7 +329,7 @@ body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--
 .sdot.done{background:var(--green);}
 
 /* COMPLETION */
-.comp-screen{min-height:100vh;background:linear-gradient(150deg,rgba(79,70,229,.9) 0%,rgba(124,58,237,.85) 50%,rgba(236,72,153,.9) 100%),url(https://images.unsplash.com/photo-1698285439446-2ad560e31a17?w=1080&auto=format&fit=crop&q=80) center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:22px;text-align:center;position:relative;overflow:hidden;}
+.comp-screen{min-height:100vh;background:linear-gradient(150deg,rgba(79,70,229,.9) 0%,rgba(124,58,237,.85) 50%,rgba(236,72,153,.9) 100%),url(/comp-bg.jpg) center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 20px;gap:22px;text-align:center;position:relative;overflow:hidden;}
 .comp-screen canvas{position:fixed;inset:0;pointer-events:none;z-index:10;}
 .comp-inner{position:relative;z-index:20;display:flex;flex-direction:column;align-items:center;gap:14px;}
 .comp-star{font-size:5.5rem;animation:spinStar .7s ease both;}
@@ -446,6 +448,7 @@ textarea.finput{resize:vertical;min-height:110px;font-weight:600;}
 .class-item-code{font-size:.74rem;font-weight:800;color:var(--muted);background:var(--surface);border:1.5px solid var(--border);border-radius:6px;padding:2px 8px;letter-spacing:.08em;}
 .class-item-del{background:none;border:none;color:var(--faint);cursor:pointer;padding:4px 6px;font-size:.9rem;border-radius:6px;line-height:1;transition:all .15s;}
 .class-item-del:hover{color:var(--red);background:rgba(239,68,68,.1);}
+.class-item-del.confirm{color:#fff;background:var(--red);font:800 .8rem/1 'Nunito',sans-serif;padding:6px 8px;}
 .new-class-row{display:flex;gap:8px;}
 .new-class-row input{flex:1;padding:9px 12px;border-radius:10px;border:2px solid var(--border);background:var(--bg);color:var(--text);font:700 .9rem 'Nunito',sans-serif;outline:none;}
 .new-class-row input:focus{border-color:var(--blue);}
@@ -545,12 +548,13 @@ textarea.finput{resize:vertical;min-height:110px;font-weight:600;}
 </style>
 
 <div id="root"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<!-- Libraries are served from our own domain (no third-party CDNs see pupils' devices) -->
+<script src="/vendor/react-18.3.1.production.min.js"></script>
+<script src="/vendor/react-dom-18.3.1.production.min.js"></script>
+<script src="/vendor/htm-3.1.1.js"></script>
+<script src="/vendor/firebase-app-compat-10.12.0.js"></script>
+<script src="/vendor/firebase-auth-compat-10.12.0.js"></script>
+<script src="/vendor/firebase-firestore-compat-10.12.0.js"></script>
 <script>
 const { useState, useEffect, useRef, useCallback } = React;
 const html = htm.bind(React.createElement);
@@ -743,6 +747,39 @@ async function uploadTaskFile(file) {
   if (!res.ok) throw new Error(data.error || 'Upload failed (' + res.status + ').');
   return { id: genId(), name: data.name, kind: data.kind, url: data.url, size: data.size };
 }
+
+// Remove uploaded files from storage for good (only the teacher's own; failures are ignored).
+async function deleteStoredFiles(files) {
+  const user = _fbAuth && _fbAuth.currentUser;
+  const urls = (files||[]).map(f=>String(f?.url||'')).filter(u=>u.startsWith('/api/file/'));
+  if (!user || !urls.length) return;
+  let token; try { token = await user.getIdToken(); } catch { return; }
+  await Promise.all(urls.map(u=>fetch(u,{ method:'DELETE', headers:{ Authorization:'Bearer '+token } }).catch(()=>{})));
+}
+const filesOfTasks = tasks => (tasks||[]).flatMap(t=>t.files||[]);
+
+// Remove everything stored for a class: its lessons, the public copy pupils read, and pupils' names.
+// Deletes where the database rules allow it, otherwise blanks the document.
+async function wipeClassData(db, uid, cls) {
+  if (!db || !cls) return;
+  const gone = async (path, empty) => {
+    const ref = db.doc(path);
+    try { await ref.delete(); } catch { try { await ref.set(empty); } catch {} }
+  };
+  const now = Date.now(), jobs = [];
+  if (uid && cls.id) jobs.push(gone('teachers/'+uid+'/tasks/'+cls.id, { items:[] }));
+  if (cls.code) jobs.push(
+    gone('classes/'+cls.code, { name:'', tasks:[], updatedAt:now }),
+    gone('helpSignals/'+cls.code, { names:{}, updatedAt:now }),
+    gone('checkins/'+cls.code, { people:{}, updatedAt:now }),
+    gone('checkins/'+cls.code+'_progress', { p:{} }),
+  );
+  await Promise.all(jobs);
+}
+
+// Help requests and check-in reactions only last for the day they were made.
+const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); };
+const todaysMap = (d, field) => (d && d.updatedAt >= startOfToday()) ? (d[field]||{}) : {};
 
 async function aiPost(path, body) {
   const user = _fbAuth && _fbAuth.currentUser;
@@ -1218,8 +1255,7 @@ function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSw
     if (!preview && reaction && db && settings?.classCode) {
       const ref = db.doc('checkins/'+settings.classCode);
       ref.get().then(snap=>{
-        const d = snap.exists?snap.data():{people:{}};
-        const people = {...(d.people||{}), [pupilName||'Anonymous']: reaction};
+        const people = {...todaysMap(snap.exists?snap.data():null,'people'), [pupilName||'Anonymous']: reaction};
         ref.set({people,updatedAt:Date.now()});
       }).catch(()=>{});
     }
@@ -1233,7 +1269,7 @@ function PupilMode({ task, settings, db, onExit, preview, board, boardTask, onSw
     try {
       const ref = db.doc('helpSignals/'+settings.classCode);
       const snap = await ref.get();
-      const names = snap.exists?(snap.data().names||{}):{};
+      const names = todaysMap(snap.exists?snap.data():null,'names');
       await ref.set({names:{...names,[pupilName||'Anonymous']:Date.now()},updatedAt:Date.now()});
     } catch {}
   };
@@ -1408,7 +1444,7 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
 
   useEffect(()=>{
     if (!showQR || qrData || !cls?.code) return;
-    import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')
+    import('/vendor/qrcode-1.5.3.esm.js')
       .then(mod => mod.toDataURL(joinUrl(cls.code),{width:900,margin:2,color:{dark:'#1E1B4B',light:'#ffffff'}}))
       .then(setQrData).catch(()=>{});
   },[showQR]);
@@ -1632,6 +1668,14 @@ function TaskEditor({ init, template, onSave, onCancel }) {
     steps:t.steps.map(s=>stepFileIds(s).includes(id)?{...withoutFileId(s),fileIds:stepFileIds(s).filter(x=>x!==id)}:s),
   }));
   const canSave = task.title.trim().length>0;
+  // Files uploaded but never saved, or removed from the task, are deleted from storage
+  const initFileIds = new Set((init?.files||[]).map(f=>f.id));
+  const save = () => {
+    const kept = new Set((task.files||[]).map(f=>f.id));
+    deleteStoredFiles((init?.files||[]).filter(f=>!kept.has(f.id)));
+    onSave(task);
+  };
+  const cancel = () => { deleteStoredFiles((task.files||[]).filter(f=>!initFileIds.has(f.id))); onCancel(); };
 
   useEffect(()=>{
     if(window.claude&&typeof window.claude.use==='function')
@@ -1652,7 +1696,7 @@ function TaskEditor({ init, template, onSave, onCancel }) {
   };
 
   return html`<div class="ed-screen">
-    <div class="ph"><button class="back" onClick=${onCancel}>← Back</button><h1>${init?'Edit Task':template?'🌅 New Morning Tasks':'✨ New Task'}</h1></div>
+    <div class="ph"><button class="back" onClick=${cancel}>← Back</button><h1>${init?'Edit Task':template?'🌅 New Morning Tasks':'✨ New Task'}</h1></div>
     <div class="ed-body">
       <div class="fcard">
         ${isMorning?html`
@@ -1802,11 +1846,58 @@ function TaskEditor({ init, template, onSave, onCancel }) {
       </div>
     </div>
     <div class="ed-footer">
-      <button class="btn btn-secondary" onClick=${onCancel}>Cancel</button>
+      <button class="btn btn-secondary" onClick=${cancel}>Cancel</button>
       <button class="btn btn-secondary" disabled=${task.steps.length===0} onClick=${()=>setPreviewing(true)}>👁️ Preview</button>
-      <button class="btn btn-primary" disabled=${!canSave||uploading>0} onClick=${()=>canSave&&!uploading&&onSave(task)}>💾 Save Task</button>
+      <button class="btn btn-primary" disabled=${!canSave||uploading>0} onClick=${()=>canSave&&!uploading&&save()}>💾 Save Task</button>
     </div>
     ${previewing?html`<div class="pv-overlay"><${PupilMode} preview=${true} task=${{...task,title:task.title.trim()||'Untitled lesson'}} settings=${{}} db=${null} onExit=${()=>setPreviewing(false)}/></div>`:null}
+  </div>`;
+}
+
+// ── DeleteAccount ──────────────────────────────────────────────
+// Removes the teacher's account and everything stored for it: lessons, uploaded files,
+// the public class copies and pupils' names. Asks for the password again first.
+function DeleteAccount({ db, classes, onDeleted }) {
+  const [open, setOpen] = useState(false);
+  const [pass, setPass] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const user = _fbAuth && _fbAuth.currentUser;
+  if (!user) return null;
+  const go = async () => {
+    setBusy(true); setErr('');
+    try { await user.reauthenticateWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, pass)); }
+    catch(e) {
+      setErr(['auth/wrong-password','auth/invalid-credential'].includes(e.code) ? 'Wrong password' : 'Could not check your password — please try again');
+      setBusy(false); return;
+    }
+    try {
+      const res = await fetch('/api/files', { method:'DELETE', headers:{ Authorization:'Bearer '+await user.getIdToken(true) } });
+      if (!res.ok) throw new Error('files');
+      for (const c of classes) await wipeClassData(db, user.uid, c);
+      if (db) {
+        // lesson lists left behind by classes deleted before this existed
+        try { const old = await db.collection('teachers/'+user.uid+'/tasks').get(); await Promise.all(old.docs.map(d=>d.ref.delete().catch(()=>{}))); } catch {}
+        try { await db.doc('teachers/'+user.uid).delete(); } catch { try { await db.doc('teachers/'+user.uid).set({ classes:[] }); } catch {} }
+      }
+      await user.delete();
+    } catch {
+      setErr('Something went wrong part-way through — please try again.');
+      setBusy(false); return;
+    }
+    try { Object.keys(localStorage).filter(k=>k.startsWith('ft_')).forEach(k=>localStorage.removeItem(k)); } catch {}
+    onDeleted();
+  };
+  return html`<div class="srow del-acct">
+    <h3>🗑️ Delete my account</h3>
+    ${!open?html`<button class="btn btn-ghost" onClick=${()=>setOpen(true)}>Delete my account and all my data…</button>`
+    :html`<p class="del-acct-warn">This permanently deletes your account, every class and lesson, your uploaded files, and pupils' names and check-ins. It can't be undone.</p>
+      <input class="finput" type="password" placeholder="Type your password to confirm" value=${pass} onInput=${e=>setPass(e.target.value)}/>
+      ${err?html`<div class="up-err">⚠️ ${err}</div>`:null}
+      <div style=${{display:'flex',gap:'8px',flexWrap:'wrap'}}>
+        <button class="btn btn-danger" disabled=${busy||!pass} onClick=${go}>${busy?'⏳ Deleting…':'Delete everything'}</button>
+        <button class="btn btn-ghost" disabled=${busy} onClick=${()=>{setOpen(false);setPass('');setErr('');}}>Cancel</button>
+      </div>`}
   </div>`;
 }
 
@@ -1889,7 +1980,7 @@ const escHtml = t => String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','
 
 // Print one A4 page per class, each with a big QR code, via a hidden iframe
 async function printQRSheets(list) {
-  const qr = await import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm');
+  const qr = await import('/vendor/qrcode-1.5.3.esm.js');
   const pages = await Promise.all(list.map(async c=>{
     const img = await qr.toDataURL(joinUrl(c.code),{width:800,margin:2,color:{dark:'#000000',light:'#ffffff'}});
     return `<section><h1>${escHtml(c.name)}</h1><p class="sub">Scan to join On Focus</p><img src="${img}" alt="QR code for ${escHtml(c.name)}"/><p class="code">${escHtml(c.code)}</p><p class="url">${escHtml(joinUrl(c.code))}</p></section>`;
@@ -1925,7 +2016,7 @@ function QRModal({ url, cls, classes, onClose }) {
   };
   useEffect(()=>{
     let cancelled = false;
-    import('https://cdn.jsdelivr.net/npm/qrcode@1.5.3/+esm')
+    import('/vendor/qrcode-1.5.3.esm.js')
       .then(mod => mod.toDataURL(url,{width:260,margin:2,color:{dark:'#1E1B4B',light:'#ffffff'}}))
       .then(d => { if(!cancelled) setDataUrl(d); })
       .catch(()=>{});
@@ -2133,8 +2224,15 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
   useEffect(()=>{
     const code = activeCls.code;
     if (!db || !code) return;
-    const u1 = db.doc('helpSignals/'+code).onSnapshot(snap=>{ setHelpNames(snap.exists?(snap.data().names||{}):{}); },()=>{});
-    const u2 = db.doc('checkins/'+code).onSnapshot(snap=>{ setCheckinPeople(snap.exists?(snap.data().people||{}):{}); },()=>{});
+    // Names from an earlier day are hidden and wiped, so pupils' names don't pile up
+    const watch = (path, field, set) => db.doc(path).onSnapshot(snap=>{
+      const d = snap.exists ? snap.data() : null;
+      set(todaysMap(d, field));
+      if (d && Object.keys(d[field]||{}).length && !(d.updatedAt >= startOfToday()))
+        snap.ref.set({[field]:{}, updatedAt:Date.now()}).catch(()=>{});
+    },()=>{});
+    const u1 = watch('helpSignals/'+code, 'names', setHelpNames);
+    const u2 = watch('checkins/'+code, 'people', setCheckinPeople);
     return ()=>{ u1(); u2(); };
   },[db, activeCls.code]);
 
@@ -2143,6 +2241,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next); setEditing(null);
   };
   const delTask = id => {
+    deleteStoredFiles(tasks.find(t=>t.id===id)?.files);
     const next = tasks.filter(t=>t.id!==id);
     setTasks(next); saveTasksForClass(activeCls.id, next); fbSaveTasks(activeCls.id, next);
   };
@@ -2163,11 +2262,21 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     if (db) db.doc('classes/'+cls.code).set({name: cls.name, tasks: [], updatedAt: Date.now()}).catch(()=>{});
     setNewClassName(''); switchClass(cls.id);
   };
-  const deleteClass = (e, id) => {
+  const [confirmDelCls, setConfirmDelCls] = useState(null);
+  const deleteClass = async (e, id) => {
     e.stopPropagation();
     if (classes.length <= 1) return;
+    if (confirmDelCls !== id) { setConfirmDelCls(id); setTimeout(()=>setConfirmDelCls(c=>c===id?null:c), 4000); return; }
+    setConfirmDelCls(null);
+    const cls = classes.find(c=>c.id===id);
     const next = classes.filter(c=>c.id!==id); setClasses(next); saveClasses(next); fbSaveClasses(next);
     if (activeClsId === id) switchClass(next[0].id);
+    // then remove its lessons, files and pupils' names for good
+    let list = loadTasksForClass(id);
+    if (db && uid) try { const snap = await db.doc('teachers/'+uid+'/tasks/'+id).get(); if (snap.exists) list = snap.data().items || list; } catch {}
+    deleteStoredFiles(filesOfTasks(list));
+    await wipeClassData(db, uid, cls);
+    try { localStorage.removeItem('ft_cls_tasks_'+id); } catch {}
   };
 
   const publishToClass = async () => {
@@ -2267,7 +2376,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
             ${classes.map(c=>html`<div key=${c.id} class=${'class-item'+(c.id===activeClsId?' active':'')} onClick=${()=>switchClass(c.id)}>
               <span class="class-item-name">${c.name}</span>
               <span class="class-item-code">${c.code}</span>
-              ${classes.length>1?html`<button class="class-item-del" onClick=${e=>deleteClass(e,c.id)} title="Delete class">🗑️</button>`:null}
+              ${classes.length>1?html`<button class=${'class-item-del'+(confirmDelCls===c.id?' confirm':'')} onClick=${e=>deleteClass(e,c.id)} title="Delete class and all its lessons">${confirmDelCls===c.id?'Delete for good?':'🗑️'}</button>`:null}
             </div>`)}
           </div>
           <div class="new-class-row" style=${{marginTop:'10px'}}>
@@ -2292,6 +2401,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
           <label>Sensitivity: ${settings.sensitivity ?? 5} / 10</label>
           <input type="range" min="1" max="10" value=${settings.sensitivity ?? 5} onInput=${e=>updSet({sensitivity:+e.target.value})}/>
         </div>
+        ${onSignOut&&uid?html`<${DeleteAccount} db=${db} classes=${classes} onDeleted=${onSignOut}/>`:null}
       </div>`:null}
 
       <!-- TASKS -->

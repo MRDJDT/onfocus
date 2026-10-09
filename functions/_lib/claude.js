@@ -1,23 +1,20 @@
-// Shared plumbing for the teacher-only AI endpoints: Firebase sign-in check and a
+// Shared plumbing for the teacher-only AI endpoints: approved-teacher check, daily limit and a
 // forced tool call to Claude. Needs the ANTHROPIC_API_KEY secret (and optionally AI_MODEL).
-import { verifyFirebaseToken } from './auth.js';
+import { approvedTeacher, useAllowance, json } from './access.js';
 
-const PROJECT_ID = 'onfocus-90d5a';
 const DEFAULT_MODEL = 'claude-sonnet-5';
 
-export const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-});
+export { json };
 
 export const str = (v, n) => (typeof v === 'string' ? v.trim().slice(0, n) : '');
 
-// Returns an error Response if the request isn't from a signed-in teacher, else null.
+// Returns an error Response unless the request is from an approved teacher with AI allowance left
+// today (which it then uses up), else null.
 export async function checkTeacher(request, env) {
   if (!env.ANTHROPIC_API_KEY) return json({ error: 'AI is not set up yet — an ANTHROPIC_API_KEY needs adding to the app.' }, 503);
-  const auth = (request.headers.get('Authorization') || '').replace(/^Bearer /, '');
-  try { await verifyFirebaseToken(auth, PROJECT_ID); }
-  catch { return json({ error: 'Please sign in again.' }, 401); }
-  return null;
+  const { user, error } = await approvedTeacher(request, env);
+  if (error) return error;
+  return useAllowance(env, user.sub, 'ai');
 }
 
 // Forces Claude to answer through `tool`. Returns { input } or { error: Response }.

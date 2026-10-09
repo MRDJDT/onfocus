@@ -1,4 +1,4 @@
-const CACHE = 'onfocus-v3';
+const CACHE = 'onfocus-v4';
 
 const PRECACHE = [
   '/logo.svg',
@@ -9,15 +9,6 @@ const PRECACHE = [
   '/pupils.svg',
   '/manifest.json',
 ];
-
-const CDN_HOSTS = new Set([
-  'cdnjs.cloudflare.com',
-  'cdn.jsdelivr.net',
-  'unpkg.com',
-  'fonts.googleapis.com',
-  'fonts.gstatic.com',
-  'www.gstatic.com',
-]);
 
 const SKIP_HOSTS = new Set([
   'firestore.googleapis.com',
@@ -50,8 +41,9 @@ self.addEventListener('fetch', e => {
   // Pass Firebase live requests straight through
   if (SKIP_HOSTS.has(url.hostname)) return;
 
-  const shouldCache = url.hostname === self.location.hostname || CDN_HOSTS.has(url.hostname);
-  if (!shouldCache) return;
+  // Only our own static files (libraries and fonts are self-hosted). Teacher files under /api/ are
+  // left to the normal browser cache so a file the teacher deletes doesn't live on in this cache.
+  if (url.hostname !== self.location.hostname || url.pathname.startsWith('/api/')) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {

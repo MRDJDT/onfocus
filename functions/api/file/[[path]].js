@@ -1,5 +1,8 @@
 // GET /api/file/<uid>/<uuid>.<ext> — public read so pupils can view teacher files.
 // Keys contain a random UUID, so files are only reachable via the link in a published task.
+// DELETE /api/file/<uid>/<uuid>.<ext> — the teacher who uploaded it removes it for good.
+import { signedIn, json } from '../../_lib/access.js';
+
 const KEY_RE = /^[A-Za-z0-9]{1,128}\/[0-9a-f-]{36}\.(pdf|png|jpg|gif|webp)$/;
 
 export async function onRequestGet({ request, env, params }) {
@@ -33,4 +36,14 @@ export async function onRequestGet({ request, env, params }) {
     headers.set('Content-Length', String(obj.size));
   }
   return new Response(obj.body, { status, headers });
+}
+
+export async function onRequestDelete({ request, env, params }) {
+  if (!env.FILES) return json({ error: 'File storage not configured' }, 500);
+  const { user, error } = await signedIn(request);
+  if (error) return error;
+  const key = [].concat(params.path || []).join('/');
+  if (!KEY_RE.test(key) || !key.startsWith(user.sub + '/')) return json({ error: 'Not found' }, 404);
+  await env.FILES.delete(key);
+  return json({ ok: true });
 }
