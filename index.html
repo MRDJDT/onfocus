@@ -1811,6 +1811,9 @@ function TaskEditor({ init, template, onSave, onCancel }) {
 }
 
 // ── TeacherLogin ───────────────────────────────────────────────
+// New teacher sign-ups are closed for now. Set to true to show "Create Account" again
+// (and re-enable sign-up in Firebase console → Authentication → Settings → User actions).
+const ALLOW_SIGNUP = false;
 function TeacherLogin({ onLoggedIn, onBack }) {
   const [tab, setTab] = useState('signin');
   const [name, setName] = useState('');
@@ -1823,7 +1826,7 @@ function TeacherLogin({ onLoggedIn, onBack }) {
     'auth/email-already-in-use': 'That email already has an account — try signing in',
     'auth/wrong-password': 'Wrong password',
     'auth/invalid-credential': 'Wrong email or password',
-    'auth/user-not-found': 'No account found — try creating one',
+    'auth/user-not-found': ALLOW_SIGNUP ? 'No account found — try creating one' : 'No account found for that email',
     'auth/invalid-email': 'Invalid email address',
     'auth/weak-password': 'Password must be at least 6 characters',
   }[code] || 'Something went wrong — please try again');
@@ -1831,6 +1834,7 @@ function TeacherLogin({ onLoggedIn, onBack }) {
   const submit = async () => {
     if (!_fbAuth) { setErr('Firebase not configured yet — see the setup note below'); return; }
     if (!email.trim() || !pass.trim()) { setErr('Please enter your email and password'); return; }
+    if (tab === 'register' && !ALLOW_SIGNUP) return;
     if (tab === 'register' && !name.trim()) { setErr('Please enter your name'); return; }
     setBusy(true); setErr('');
     try {
@@ -1852,10 +1856,10 @@ function TeacherLogin({ onLoggedIn, onBack }) {
     <div class="tlogin-box">
       <div class="tlogin-title">🔐 Teacher Login</div>
       <p class="tlogin-sub">Sign in to manage your classes</p>
-      <div class="tlogin-tabs">
+      ${ALLOW_SIGNUP?html`<div class="tlogin-tabs">
         <button class=${'tlogin-tab'+(tab==='signin'?' active':'')} onClick=${()=>switchTab('signin')}>Sign In</button>
         <button class=${'tlogin-tab'+(tab==='register'?' active':'')} onClick=${()=>switchTab('register')}>Create Account</button>
-      </div>
+      </div>`:null}
       ${tab==='register'?html`<div class="tlogin-field">
         <label>Your Name</label>
         <input type="text" placeholder="e.g. Mrs Jones" value=${name} onInput=${e=>setName(e.target.value)}/>
@@ -1873,6 +1877,7 @@ function TeacherLogin({ onLoggedIn, onBack }) {
         ${busy?'⏳ Please wait…':tab==='register'?'✅ Create Account':'🔓 Sign In'}
       </button>
       ${!FIREBASE_CONFIG?html`<p class="tlogin-note">⚠️ Firebase not set up yet. Add your Firebase config to <code>FIREBASE_CONFIG</code> in index.html to enable teacher accounts, live help signals, and class sync.</p>`:null}
+      ${ALLOW_SIGNUP?null:html`<p class="tlogin-note">New teacher accounts aren't open yet.</p>`}
       <button class="btn btn-ghost" onClick=${onBack}>← Back to Home</button>
     </div>
   </div>`;
