@@ -748,6 +748,10 @@ async function uploadTaskFile(file) {
   return { id: genId(), name: data.name, kind: data.kind, url: data.url, size: data.size };
 }
 
+// The signed-in teacher's id. Every write to classes/{code} carries it as `owner`, so the
+// database rules can stop other accounts changing a class they don't own.
+const classOwner = () => (_fbAuth && _fbAuth.currentUser) ? _fbAuth.currentUser.uid : null;
+
 // Remove uploaded files from storage for good (only the teacher's own; failures are ignored).
 async function deleteStoredFiles(files) {
   const user = _fbAuth && _fbAuth.currentUser;
@@ -769,7 +773,7 @@ async function wipeClassData(db, uid, cls) {
   const now = Date.now(), jobs = [];
   if (uid && cls.id) jobs.push(gone('teachers/'+uid+'/tasks/'+cls.id, { items:[] }));
   if (cls.code) jobs.push(
-    gone('classes/'+cls.code, { name:'', tasks:[], updatedAt:now }),
+    gone('classes/'+cls.code, { name:'', tasks:[], updatedAt:now, owner:classOwner() }),
     gone('helpSignals/'+cls.code, { names:{}, updatedAt:now }),
     gone('checkins/'+cls.code, { people:{}, updatedAt:now }),
     gone('checkins/'+cls.code+'_progress', { p:{} }),
@@ -1412,10 +1416,10 @@ function BoardMode({ task, cls, settings, noise, db, onExit }) {
   // Share the board's position with pupils' devices via the public class doc
   useEffect(()=>{
     if (!canSync) return;
-    db.doc('classes/'+cls.code).set({board:{active:lead, taskId:task.id, idx, attention, updatedAt:Date.now()}},{merge:true}).catch(()=>{});
+    db.doc('classes/'+cls.code).set({board:{active:lead, taskId:task.id, idx, attention, updatedAt:Date.now()}, owner:classOwner()},{merge:true}).catch(()=>{});
   },[canSync, lead, idx, attention]);
   useEffect(()=>()=>{
-    if (canSync) db.doc('classes/'+cls.code).set({board:{active:false, attention:false, updatedAt:Date.now()}},{merge:true}).catch(()=>{});
+    if (canSync) db.doc('classes/'+cls.code).set({board:{active:false, attention:false, updatedAt:Date.now()}, owner:classOwner()},{merge:true}).catch(()=>{});
   },[]);
 
   useEffect(()=>{ if (timerState==='done') { setBigTimer(false); playChime(); } },[timerState]);
@@ -2086,7 +2090,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     // keep published class in sync so pupils always see current tasks
     const code = (cls || classes.find(c=>c.id===classId))?.code;
     const name = (cls || classes.find(c=>c.id===classId))?.name;
-    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList.filter(t=>!t.archived), updatedAt: Date.now()}).catch(e=>console.warn('Publish failed:', e));
+    if (code) db.doc('classes/'+code).set({name: name||'', tasks: taskList.filter(t=>!t.archived), updatedAt: Date.now(), owner: classOwner()}).catch(e=>console.warn('Publish failed:', e));
   };
 
   // Build sample classes + tasks (called on first login or Firestore failure)
@@ -2190,7 +2194,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
         seed.cls.forEach(c => {
           const t = seed.tasks[c.id] || [];
           db.doc('teachers/'+uid+'/tasks/'+c.id).set({items: t}).catch(()=>{});
-          db.doc('classes/'+c.code).set({name: c.name, tasks: t, updatedAt: Date.now()}).catch(()=>{});
+          db.doc('classes/'+c.code).set({name: c.name, tasks: t, updatedAt: Date.now(), owner: classOwner()}).catch(()=>{});
         });
       }
     }).catch(()=>{
@@ -2259,7 +2263,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     if (!newClassName.trim()) return;
     const cls = { id: genId(), name: newClassName.trim(), code: genClassCode() };
     const next = [...classes, cls]; setClasses(next); saveClasses(next); fbSaveClasses(next);
-    if (db) db.doc('classes/'+cls.code).set({name: cls.name, tasks: [], updatedAt: Date.now()}).catch(()=>{});
+    if (db) db.doc('classes/'+cls.code).set({name: cls.name, tasks: [], updatedAt: Date.now(), owner: classOwner()}).catch(()=>{});
     setNewClassName(''); switchClass(cls.id);
   };
   const [confirmDelCls, setConfirmDelCls] = useState(null);
@@ -2283,7 +2287,7 @@ function TeacherMode({ db, teacher, onExit, onSignOut }) {
     if (!db) { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); return; }
     setPublishState('loading');
     try {
-      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks:clean(tasks.filter(t=>!t.archived)),updatedAt:Date.now()});
+      await db.doc('classes/'+activeCls.code).set({name:activeCls.name,tasks:clean(tasks.filter(t=>!t.archived)),updatedAt:Date.now(),owner:classOwner()});
       setPublishState('ok'); setTimeout(()=>setPublishState('idle'),3500);
     } catch { setPublishState('err'); setTimeout(()=>setPublishState('idle'),3000); }
   };

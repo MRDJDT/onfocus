@@ -1,0 +1,60 @@
+rules_version = '2';
+// On Focus — Firestore security rules. Not deployed from here: paste into
+// Firebase console → Firestore Database → Rules, then Publish. Keep this file in step with the console.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function data() { return request.resource.data; }
+    // checkins/{code} and checkins/{code}_progress both belong to class {code}
+    function classExists(docId) {
+      return exists(/databases/$(database)/documents/classes/$(docId.split('_')[0]));
+    }
+
+    // The published copy of a class that pupils read by its code. Pupils can open one class
+    // by code but never list them. Only the owning teacher can change or delete it.
+    match /classes/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn() && data().owner == request.auth.uid;
+      // Classes made before `owner` existed have none; their teacher claims them on next publish.
+      allow update: if signedIn() && data().owner == request.auth.uid
+                    && resource.data.get('owner', null) in [null, request.auth.uid];
+      allow delete: if signedIn() && resource.data.get('owner', null) in [null, request.auth.uid];
+    }
+
+    // Pupils (not signed in) add their name when they ask for help. Only for a real class,
+    // only these fields, and a sensible number of names. Never listable.
+    match /helpSignals/{code} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if classExists(code)
+                            && data().keys().hasOnly(['names', 'updatedAt'])
+                            && data().get('names', {}) is map
+                            && data().get('names', {}).size() <= 100;
+      allow delete: if signedIn();
+    }
+
+    // End-of-lesson check-ins ({code}: people → reaction) and anonymous live progress
+    // ({code}_progress: p → device → step). Same limits as above.
+    match /checkins/{docId} {
+      allow get: if true;
+      allow list: if false;
+      allow create, update: if classExists(docId)
+                            && data().keys().hasOnly(['people', 'updatedAt', 'p'])
+                            && data().get('people', {}) is map
+                            && data().get('people', {}).size() <= 100
+                            && data().get('p', {}) is map
+                            && data().get('p', {}).size() <= 200;
+      allow delete: if signedIn();
+    }
+
+    // A teacher's own classes and lessons: only they can see or change them.
+    match /teachers/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+      match /tasks/{classId} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+  }
+}
